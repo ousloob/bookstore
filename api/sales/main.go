@@ -54,7 +54,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		}
 		DB struct {
 			User         string `conf:"default:oussama"`
-			Password     string `conf:"default:postgres"`
+			Password     string
 			Host         string `conf:"default:localhost"`
 			Name         string `conf:"default:bookdb"`
 			MaxIdleConns int    `conf:"default:0"`
