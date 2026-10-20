@@ -53,7 +53,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 			APIHost         string        `conf:"default:0.0.0.0:3000"`
 		}
 		DB struct {
-			User         string `conf:"default:oussama"`
+			User         string
 			Password     string
 			Host         string `conf:"default:localhost"`
 			Name         string `conf:"default:bookdb"`
