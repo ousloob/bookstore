@@ -78,8 +78,6 @@ func run(ctx context.Context, log *slog.Logger) error {
 		return fmt.Errorf("parse conf: %w", err)
 	}
 
-	log.InfoContext(ctx, "startup", "config", cfg)
-
 	// =========================================================================
 	// Database Support
 
