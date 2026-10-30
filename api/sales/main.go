@@ -62,10 +62,8 @@ func run(ctx context.Context, log *slog.Logger) error {
 			DisableTLS   bool   `conf:"default:true"`
 		}
 	}{
-		Version: conf.Version{
-			Build: build,
-			Desc:  "© 2021 Oussama Moulana",
-		},
+		Build: build,
+		Desc:  "© 2021 Oussama Moulana",
 	}
 
 	// =========================================================================
