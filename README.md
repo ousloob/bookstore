@@ -41,7 +41,7 @@ Payments are **out of scope** for now: orders are recorded, and card payments wo
 
 ## Tech stack
 
-- **Language:** Go 1.23+
+- **Language:** Go 1.27+
 - **HTTP:** [chi](https://github.com/go-chi/chi)
 - **Database:** PostgreSQL, accessed with `sqlx`
 - **Passwords:** bcrypt
@@ -50,7 +50,7 @@ Payments are **out of scope** for now: orders are recorded, and card payments wo
 
 ## Getting started
 
-Requirements: Go 1.23 or later. A PostgreSQL server is needed for anything that touches the database (the database schema and migrations are still to be added).
+Requirements: Go 1.27 or later. A PostgreSQL server is needed for anything that touches the database (the database schema and migrations are still to be added).
 
 ```sh
 git clone https://github.com/ousloob/bookstore.git

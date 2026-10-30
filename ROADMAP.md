@@ -9,7 +9,7 @@ Do this first, while the database code is still tiny. One small commit per item,
 **Toolchain and dependencies**
 
 - [x] Rename the Go module from `github.com/ousloob/booksales` to `github.com/ousloob/bookstore`, and fix the README badges
-- [ ] Move to Go 1.27 (latest patch at the time of writing: 1.27.3) and keep up with patch releases
+- [x] Move to Go 1.27 (latest patch at the time of writing: 1.27.3) and keep up with patch releases
 - [ ] Use `encoding/json/v2` for request and response bodies
 - [ ] Replace `sqlx` and `lib/pq` with `pgx` v5 (`pgxpool`, named arguments, `CollectRows`)
 - [ ] Update all remaining dependencies, and keep `govulncheck` green
