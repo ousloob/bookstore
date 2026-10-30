@@ -13,8 +13,8 @@ import (
 
 	"github.com/ardanlabs/conf/v3"
 	"github.com/lmittmann/tint"
-	"github.com/ousloob/booksales/api/sales/routing"
-	"github.com/ousloob/booksales/business/sys/database"
+	"github.com/ousloob/bookstore/api/sales/routing"
+	"github.com/ousloob/bookstore/business/sys/database"
 )
 
 var build = "develop"
