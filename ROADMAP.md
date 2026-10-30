@@ -18,8 +18,8 @@ Do this first, while the database code is still tiny. One small commit per item,
 
 **CI and tooling**
 
-- [ ] Replace CircleCI with GitHub Actions: tests, `go vet`, `staticcheck`, `govulncheck`
-- [ ] Pin tool versions instead of using `@latest`, and read the Go version from `go.mod`
+- [x] Replace CircleCI with GitHub Actions: tests, `go vet`, `staticcheck`, `govulncheck`
+- [x] Pin tool versions instead of using `@latest`, and read the Go version from `go.mod`
 - [ ] Enable Dependabot for Go modules and for the workflow files
 
 **Database**
