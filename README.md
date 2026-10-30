@@ -1,6 +1,6 @@
 # bookstore
 
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/ousloob/bookstore/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/ousloob/bookstore/tree/main)
+[![CI](https://github.com/ousloob/bookstore/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ousloob/bookstore/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ousloob/bookstore)](https://goreportcard.com/report/github.com/ousloob/bookstore)
 [![License: MIT](https://img.shields.io/github/license/ousloob/bookstore)](LICENSE)
 
@@ -19,7 +19,7 @@ A REST API for an independent bookstore, written in Go. The store manages the bo
 - Request logging middleware
 - Configuration through environment variables and flags
 - PostgreSQL connection support (`sqlx`, `lib/pq`)
-- CI with tests, `go vet`, `staticcheck` and `govulncheck`
+- CI with `go vet`, `go fix`, `staticcheck` and `govulncheck`, then tests and build
 
 ## In progress
 
@@ -46,7 +46,7 @@ Payments are **out of scope** for now: orders are recorded, and card payments wo
 - **Database:** PostgreSQL, accessed with `sqlx`
 - **Passwords:** bcrypt
 - **Configuration:** [ardanlabs/conf](https://github.com/ardanlabs/conf)
-- **CI:** CircleCI
+- **CI:** GitHub Actions
 
 ## Getting started
 
@@ -70,10 +70,15 @@ Configuration (web timeouts, listen address, database host, name and credentials
 
 ```sh
 make test       # run the tests
-make lint       # go vet + staticcheck
+make lint       # go vet + go fix -diff + staticcheck
 make vulncheck  # govulncheck
-make check      # all of the above
+make check      # lint + vulncheck + test
+make fix        # apply the modernizations that make lint reports
 ```
+
+These are the same checks CI runs, with staticcheck and govulncheck
+pinned to the versions at the top of the [Makefile](Makefile), so no tool
+installation is needed.
 
 ## Project layout
 
