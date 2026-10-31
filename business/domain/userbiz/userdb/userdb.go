@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var ErrUniqueEmail = errors.New("email is not unique")
@@ -15,11 +16,11 @@ var ErrUniqueEmail = errors.New("email is not unique")
 // Bus manages the set of APIs for user access.
 type Bus struct {
 	log *log.Logger
-	db  *sqlx.DB
+	db  *pgxpool.Pool
 }
 
 // NewBus constructs a data for api access.
-func NewBus(log *log.Logger, db *sqlx.DB) *Bus {
+func NewBus(log *log.Logger, db *pgxpool.Pool) *Bus {
 	return &Bus{
 		log: log,
 		db:  db,
@@ -29,7 +30,7 @@ func NewBus(log *log.Logger, db *sqlx.DB) *Bus {
 // Create inserts a new user into the database.
 func (b *Bus) Create(ctx context.Context, usr User) error {
 	const q = `
-	INSERT into users (
+	INSERT INTO users (
         user_id,
         name,
         email,
@@ -39,16 +40,26 @@ func (b *Bus) Create(ctx context.Context, usr User) error {
         date_updated
     )
 	VALUES (
-        :user_id,
-        :name,
-        :email,
-        :password_hash,
-        :roles,
-        :date_created,
-        date_updated
+        @user_id,
+        @name,
+        @email,
+        @password_hash,
+        @roles,
+        @date_created,
+        @date_updated
     )`
 
-	if _, err := sqlx.NamedExecContext(ctx, b.db, q, usr); err != nil {
+	args := pgx.NamedArgs{
+		"user_id":       usr.ID,
+		"name":          usr.Name,
+		"email":         usr.Email,
+		"password_hash": usr.PasswordHash,
+		"roles":         usr.Roles,
+		"date_created":  usr.DateCreated,
+		"date_updated":  usr.DateUpdated,
+	}
+
+	if _, err := b.db.Exec(ctx, q, args); err != nil {
 		return fmt.Errorf("inserting user: %w", err)
 	}
 

@@ -57,8 +57,8 @@ func run(ctx context.Context, log *slog.Logger) error {
 			Password     string
 			Host         string `conf:"default:localhost"`
 			Name         string `conf:"default:bookdb"`
-			MaxIdleConns int    `conf:"default:0"`
-			MaxOpenConns int    `conf:"default:0"`
+			MaxConns     int    `conf:"default:0"`
+			MinIdleConns int    `conf:"default:0"`
 			DisableTLS   bool   `conf:"default:true"`
 		}
 	}{
@@ -81,22 +81,19 @@ func run(ctx context.Context, log *slog.Logger) error {
 
 	log.InfoContext(ctx, "startup", "status", "initalizing database support", "hostport", cfg.DB.Host)
 
-	db, err := database.Open(database.Config{
+	db, err := database.Open(ctx, database.Config{
 		User:         cfg.DB.User,
 		Password:     cfg.DB.Password,
 		Host:         cfg.DB.Host,
 		Name:         cfg.DB.Name,
-		MaxIdleConns: cfg.DB.MaxIdleConns,
-		MaxOpenConns: cfg.DB.MaxOpenConns,
+		MaxConns:     cfg.DB.MaxConns,
+		MinIdleConns: cfg.DB.MinIdleConns,
 		DisableTLS:   cfg.DB.DisableTLS,
 	})
 	if err != nil {
-		return fmt.Errorf("connect to do db: %w", err)
+		return fmt.Errorf("open db: %w", err)
 	}
-
-	defer func() {
-		db.Close()
-	}()
+	defer db.Close()
 
 	// =========================================================================
 	// Start API Service

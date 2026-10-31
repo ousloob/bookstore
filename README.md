@@ -18,7 +18,7 @@ A REST API for an independent bookstore, written in Go. The store manages the bo
 - HTTP server with graceful shutdown, configurable timeouts and structured logging (`log/slog`)
 - Request logging middleware
 - Configuration through environment variables and flags
-- PostgreSQL connection support (`sqlx`, `lib/pq`)
+- PostgreSQL connection pool (`pgx` v5, `pgxpool`)
 - CI with `go vet`, `go fix`, `staticcheck` and `govulncheck`, then tests and build
 
 ## In progress
@@ -43,7 +43,7 @@ Payments are **out of scope** for now: orders are recorded, and card payments wo
 
 - **Language:** Go 1.27+
 - **HTTP:** [chi](https://github.com/go-chi/chi)
-- **Database:** PostgreSQL, accessed with `sqlx`
+- **Database:** PostgreSQL, accessed with [pgx](https://github.com/jackc/pgx) v5
 - **Passwords:** bcrypt
 - **Configuration:** [ardanlabs/conf](https://github.com/ardanlabs/conf)
 - **CI:** GitHub Actions
