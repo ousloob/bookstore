@@ -14,6 +14,8 @@ Do this first, while the database code is still tiny. One small commit per item,
 - [ ] Replace `sqlx` and `lib/pq` with `pgx` v5 (`pgxpool`, named arguments, `CollectRows`)
 - [x] Update all remaining dependencies, and keep `govulncheck` green
 - [x] Drop the `vendor/` directory and rely on the module cache (`go.sum` already pins dependencies)
+- [x] Replace `github.com/google/uuid` with the standard library `uuid` package (Go 1.27+)
+- [x] Evaluate replacing `golang.org/x/crypto/bcrypt`: the standard library has no bcrypt or argon2id (only `crypto/pbkdf2`), and `x/crypto` is maintained by the Go team with monthly releases, so keep it
 - [ ] Evaluate replacing `chi` with the standard library router (pattern routing, Go 1.22+)
 
 **CI and tooling**
