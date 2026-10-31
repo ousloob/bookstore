@@ -17,7 +17,7 @@ Do this first, while the database code is still tiny. One small commit per item,
 - [x] Replace `github.com/google/uuid` with the standard library `uuid` package (Go 1.27+)
 - [x] Evaluate replacing `golang.org/x/crypto/bcrypt`: the standard library has no bcrypt or argon2id (only `crypto/pbkdf2`), and `x/crypto` is maintained by the Go team with monthly releases, so keep it
 - [x] Evaluate replacing `chi` with the standard library router. Decision: move to `net/http.ServeMux`. Everything `chi` does for this project today (method routing, `Use`, a status-recording response writer) the standard library covers since Go 1.22 (`GET /books/{id}` patterns, `r.PathValue`, automatic 405 with an `Allow` header) or costs about 30 lines in `support/web`. Known trade-offs: no custom 405 body, and per-group middleware means wrapping a sub-mux instead of `chi.Group`
-- [ ] Replace `chi` with `net/http.ServeMux`: register `METHOD /path` patterns, add a middleware chain helper and a response writer that records status and bytes (with `Unwrap` for `http.ResponseController`), and drop `chi/middleware` from `mid.Logger`
+- [x] Replace `chi` with `net/http.ServeMux`: register `METHOD /path` patterns, add a middleware chain helper and a response writer that records status and bytes (with `Unwrap` for `http.ResponseController`), and drop `chi/middleware` from `mid.Logger`
 
 **CI and tooling**
 
@@ -37,7 +37,7 @@ Do this first, while the database code is still tiny. One small commit per item,
 - [ ] Fix error handling in `userbiz.Create`: errors other than a duplicate email are currently swallowed
 - [ ] Stop logging the full configuration at startup (it includes the database password), and remove the default database user and password from the code
 - [ ] Add `.env.example` and document the environment variables
-- [ ] Pass the logger through the routing setup (it is currently nil)
+- [x] Pass the logger through the routing setup (it was nil, and the request logger used the global `slog` logger)
 
 **Tests**
 

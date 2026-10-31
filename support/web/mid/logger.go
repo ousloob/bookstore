@@ -4,26 +4,28 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/go-chi/chi/v5/middleware"
 )
 
-func Logger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+// Logger returns a middleware that logs one line per request, with the
+// method, path, status, response size, duration and remote address.
+func Logger(log *slog.Logger) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			rw := newResponseWriter(w)
 
-		defer func() {
-			slog.Info("HTTP request",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"status", ww.Status(),
-				"bytes", ww.BytesWritten(),
-				"duration", time.Since(start),
-				"remoteaddr", r.RemoteAddr,
-			)
-		}()
+			defer func() {
+				log.InfoContext(r.Context(), "HTTP request",
+					"method", r.Method,
+					"path", r.URL.Path,
+					"status", rw.Status(),
+					"bytes", rw.BytesWritten(),
+					"duration", time.Since(start),
+					"remoteaddr", r.RemoteAddr,
+				)
+			}()
 
-		next.ServeHTTP(ww, r)
-	})
+			next.ServeHTTP(rw, r)
+		})
+	}
 }

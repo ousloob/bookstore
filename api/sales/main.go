@@ -108,6 +108,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	// Construct the mux for the API calls.
 	apiMux := routing.APIMux(
 		routing.Bus{
+			Log:      log,
 			Shutdown: shutdown,
 		},
 	)
