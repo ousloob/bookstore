@@ -3,9 +3,9 @@ package routing
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 
-	"github.com/go-chi/chi/v5"
 	v1 "github.com/ousloob/bookstore/api/sales/routing/v1"
 	"github.com/ousloob/bookstore/support/web/mid"
 )
@@ -16,13 +16,11 @@ type Bus struct {
 	Shutdown chan os.Signal
 }
 
-// APIMux constructs and returns the API Router.
-func APIMux(bus Bus) *chi.Mux {
-
-	mux := chi.NewRouter()
-	mux.Use(mid.Logger)
+// APIMux constructs and returns the API handler.
+func APIMux(bus Bus) http.Handler {
+	mux := http.NewServeMux()
 
 	v1.Routes(mux, v1.Bus{Log: bus.Log})
 
-	return mux
+	return mid.Logger(mux)
 }
