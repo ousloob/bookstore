@@ -10,7 +10,6 @@ GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.9.0
 .PHONY: tidy
 tidy:
 	go mod tidy
-	go mod vendor
 
 # ==============================================================================
 # Running the API locally

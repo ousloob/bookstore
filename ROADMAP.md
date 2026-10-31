@@ -12,8 +12,8 @@ Do this first, while the database code is still tiny. One small commit per item,
 - [x] Move to Go 1.27 (latest patch at the time of writing: 1.27.3) and keep up with patch releases
 - [ ] Use `encoding/json/v2` for request and response bodies
 - [ ] Replace `sqlx` and `lib/pq` with `pgx` v5 (`pgxpool`, named arguments, `CollectRows`)
-- [ ] Update all remaining dependencies, and keep `govulncheck` green
-- [ ] Decide whether to keep the `vendor/` directory (`go.sum` already pins dependencies)
+- [x] Update all remaining dependencies, and keep `govulncheck` green
+- [x] Drop the `vendor/` directory and rely on the module cache (`go.sum` already pins dependencies)
 - [ ] Evaluate replacing `chi` with the standard library router (pattern routing, Go 1.22+)
 
 **CI and tooling**
