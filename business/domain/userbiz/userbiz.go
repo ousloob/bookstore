@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ousloob/bookstore/business/domain/userbiz/userdb"
 	"github.com/ousloob/bookstore/business/sys/database"
 	"github.com/ousloob/bookstore/business/sys/validate"
@@ -20,9 +20,9 @@ type Bus struct {
 	store *userdb.Bus
 }
 
-func NewCore(log *log.Logger, sqlxDB *sqlx.DB) *Bus {
+func NewCore(log *log.Logger, db *pgxpool.Pool) *Bus {
 	return &Bus{
-		store: userdb.NewBus(log, sqlxDB),
+		store: userdb.NewBus(log, db),
 	}
 }
 

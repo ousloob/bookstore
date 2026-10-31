@@ -11,7 +11,7 @@ Do this first, while the database code is still tiny. One small commit per item,
 - [x] Rename the Go module from `github.com/ousloob/booksales` to `github.com/ousloob/bookstore`, and fix the README badges
 - [x] Move to Go 1.27 (latest patch at the time of writing: 1.27.3) and keep up with patch releases
 - [ ] Use `encoding/json/v2` for request and response bodies
-- [ ] Replace `sqlx` and `lib/pq` with `pgx` v5 (`pgxpool`, named arguments, `CollectRows`)
+- [x] Replace `sqlx` and `lib/pq` with `pgx` v5 (`pgxpool`, named arguments; use `CollectRows` and `RowToStructByName` once there are read queries)
 - [x] Update all remaining dependencies, and keep `govulncheck` green
 - [x] Drop the `vendor/` directory and rely on the module cache (`go.sum` already pins dependencies)
 - [x] Replace `github.com/google/uuid` with the standard library `uuid` package (Go 1.27+)
@@ -32,7 +32,7 @@ Do this first, while the database code is still tiny. One small commit per item,
 
 **Bugs and safety**
 
-- [ ] Fix the user insert query (`date_updated` is missing its `:` in the `VALUES` list)
+- [x] Fix the user insert query (`date_updated` was missing its `:` in the `VALUES` list; fixed when the query moved to `pgx` named arguments)
 - [ ] Fix error handling in `userbiz.Create`: errors other than a duplicate email are currently swallowed
 - [ ] Stop logging the full configuration at startup (it includes the database password), and remove the default database user and password from the code
 - [ ] Add `.env.example` and document the environment variables
