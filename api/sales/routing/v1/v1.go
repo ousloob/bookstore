@@ -5,6 +5,8 @@ package v1
 import (
 	"log/slog"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type Bus struct {
@@ -12,9 +14,8 @@ type Bus struct {
 }
 
 // Routes binds all the version 1 routes.
-func Routes(mux *http.ServeMux, bus Bus) {
-	// {$} matches only "/", not every path as a bare "/" pattern would.
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+func Routes(router *chi.Mux, bus Bus) {
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Salam Alaikoum"))
 	})
 }

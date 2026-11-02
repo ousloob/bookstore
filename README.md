@@ -42,7 +42,7 @@ Payments are **out of scope** for now: orders are recorded, and card payments wo
 ## Tech stack
 
 - **Language:** Go 1.27+
-- **HTTP:** `net/http` with the standard library router (`ServeMux` method and wildcard patterns)
+- **HTTP:** [chi](https://github.com/go-chi/chi)
 - **Database:** PostgreSQL, accessed with [pgx](https://github.com/jackc/pgx) v5
 - **Passwords:** bcrypt
 - **Configuration:** [ardanlabs/conf](https://github.com/ardanlabs/conf)
