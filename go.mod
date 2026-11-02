@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	github.com/ardanlabs/conf/v3 v3.13.0
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/lmittmann/tint v1.2.1
 	golang.org/x/crypto v0.58.0
