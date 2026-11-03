@@ -3,7 +3,6 @@
 [![Go](https://img.shields.io/github/go-mod/go-version/ousloob/bookstore)](go.mod)
 [![CI](https://github.com/ousloob/bookstore/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ousloob/bookstore/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/ousloob/bookstore)](https://github.com/ousloob/bookstore/releases)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ousloob/bookstore/badge)](https://scorecard.dev/viewer/?uri=github.com/ousloob/bookstore)
 [![License: MIT](https://img.shields.io/github/license/ousloob/bookstore)](LICENSE)
 
 A REST API for an independent bookstore, written in Go. The store manages the books it owns; customers browse the catalog, keep favorites, reserve a book, and buy a physical or digital copy.
