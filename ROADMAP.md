@@ -6,7 +6,6 @@ Working document: finished items are removed, the file is deleted once empty. Mi
 
 **Configuration and secrets**
 
-- [ ] Replace `ardanlabs/conf` with [`caarlos0/env`](https://github.com/caarlos0/env): defaults in `envDefault` tags, no example file
 - [ ] Secrets (database user and password, token signing key, anything sensitive) live in [Infisical](https://infisical.com) and reach the app as environment variables: `infisical run` locally, the Infisical operator in Kubernetes
 
 **Database**

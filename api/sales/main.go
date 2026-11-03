@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ardanlabs/conf/v3"
+	"github.com/caarlos0/env/v11"
 	"github.com/lmittmann/tint"
 	"github.com/ousloob/bookstore/api/sales/routing"
 	"github.com/ousloob/bookstore/business/sys/database"
@@ -43,36 +43,32 @@ func run(ctx context.Context, log *slog.Logger) error {
 	// =========================================================================
 	// Configuration
 
-	cfg := struct {
-		conf.Version
+	var cfg struct {
 		Web struct {
-			ReadTimeout     time.Duration `conf:"default:5s"`
-			WriteTimeOut    time.Duration `conf:"default:10s"`
-			IdleTimeout     time.Duration `conf:"default:12s"`
-			ShutdownTimeout time.Duration `conf:"default:20s"`
-			APIHost         string        `conf:"default:0.0.0.0:3000"`
-		}
+			ReadTimeout     time.Duration `env:"READ_TIMEOUT" envDefault:"5s"`
+			WriteTimeOut    time.Duration `env:"WRITE_TIMEOUT" envDefault:"10s"`
+			IdleTimeout     time.Duration `env:"IDLE_TIMEOUT" envDefault:"12s"`
+			ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"20s"`
+			APIHost         string        `env:"API_HOST" envDefault:"0.0.0.0:3000"`
+		} `envPrefix:"WEB_"`
 		DB struct {
-			User         string
-			Password     string
-			Host         string `conf:"default:localhost"`
-			Name         string `conf:"default:bookdb"`
-			MaxConns     int    `conf:"default:0"`
-			MinIdleConns int    `conf:"default:0"`
-			DisableTLS   bool   `conf:"default:true"`
-		}
-	}{
-		Build: build,
-		Desc:  "© 2021 Oussama Moulana",
+			User         string `env:"USER"`
+			Password     string `env:"PASSWORD"`
+			Host         string `env:"HOST" envDefault:"localhost"`
+			Name         string `env:"NAME" envDefault:"bookdb"`
+			MaxConns     int    `env:"MAX_CONNS" envDefault:"0"`
+			MinIdleConns int    `env:"MIN_IDLE_CONNS" envDefault:"0"`
+			DisableTLS   bool   `env:"DISABLE_TLS" envDefault:"true"`
+		} `envPrefix:"DB_"`
 	}
 
 	// =========================================================================
 	// App Starting
 
-	log.InfoContext(ctx, "starting service", "environment", cfg.Build)
+	log.InfoContext(ctx, "starting service", "build", build)
 	defer log.InfoContext(ctx, "shutdown complete")
 
-	if _, err := conf.Parse(cfg.Build, &cfg); err != nil {
+	if err := env.Parse(&cfg); err != nil {
 		return fmt.Errorf("parse conf: %w", err)
 	}
 
