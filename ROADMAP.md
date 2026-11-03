@@ -29,7 +29,6 @@ Working document: finished items are removed, the file is deleted once empty. Mi
 **Tooling and CI**
 
 - [ ] [golangci-lint v2](https://golangci-lint.run) with `gosec` enabled (minus G104 and G115, which duplicate errcheck and flag every integer conversion) replaces `staticcheck`; keep `go fix -diff` and `govulncheck`
-- [ ] [OpenSSF Scorecard](https://github.com/ossf/scorecard-action) workflow on a weekly schedule and on pushes to `main`, results published for the badge
 - [ ] Dependabot for Go modules and workflow files
 - [ ] [GoReleaser](https://goreleaser.com) on tag push: binaries, checksums, changelog (container image added in M8)
 - [ ] Integration tests against PostgreSQL with [testcontainers-go](https://golang.testcontainers.org), run in CI; replace the placeholder tests
