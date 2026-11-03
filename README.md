@@ -32,7 +32,7 @@ See [ROADMAP.md](ROADMAP.md) for the order of work.
 
 ## Tech stack
 
-Go, PostgreSQL, [pgx](https://github.com/jackc/pgx), `net/http` and `log/slog` from the standard library, GitHub Actions.
+Go, PostgreSQL, [pgx](https://github.com/jackc/pgx), [caarlos0/env](https://github.com/caarlos0/env) for configuration, `net/http` and `log/slog` from the standard library, GitHub Actions.
 
 ## Running it
 
