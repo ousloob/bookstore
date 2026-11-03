@@ -1,70 +1,48 @@
 # bookstore
 
+[![Go](https://img.shields.io/github/go-mod/go-version/ousloob/bookstore)](go.mod)
 [![CI](https://github.com/ousloob/bookstore/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ousloob/bookstore/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ousloob/bookstore)](https://goreportcard.com/report/github.com/ousloob/bookstore)
+[![Release](https://img.shields.io/github/v/release/ousloob/bookstore)](https://github.com/ousloob/bookstore/releases)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ousloob/bookstore/badge)](https://scorecard.dev/viewer/?uri=github.com/ousloob/bookstore)
 [![License: MIT](https://img.shields.io/github/license/ousloob/bookstore)](LICENSE)
 
-A REST API for an independent bookstore, written in Go. The store manages the books it owns; customers can browse the catalogue, keep favorites, reserve a book, and buy a physical or digital copy.
-
-> **Status: early development.** The project skeleton is in place, but most features below are still planned. See [ROADMAP.md](ROADMAP.md) for what is next.
-
-## Who it is for
-
-- **Bookstore owners and small shops** who want a simple API for their catalogue, stock and reservations, instead of a heavy e-commerce platform.
-- **Go developers** who want a readable example of a layered Go service (handlers, business logic, storage) with PostgreSQL.
+A REST API for an independent bookstore, written in Go. The store manages the books it owns; customers browse the catalog, keep favorites, reserve a book, and buy a physical or digital copy.
 
 ## What works today
 
-- HTTP server with graceful shutdown, configurable timeouts and structured logging (`log/slog`)
-- Request logging middleware
-- Configuration through environment variables and flags
-- PostgreSQL connection pool (`pgx` v5, `pgxpool`)
-- CI with `go vet`, `go fix`, `staticcheck` and `govulncheck`, then tests and build
-
-## In progress
-
-- User creation in the business layer, with password hashing (bcrypt). It is not exposed through the API yet, and the database schema is still to be written.
+- HTTP server with graceful shutdown and request logging
+- PostgreSQL connection pool
+- CI: lint, vulnerability scan, tests and build
 
 ## Planned
 
-| Area          | What                                                             |
-| ------------- | ---------------------------------------------------------------- |
-| Catalogue     | Add, edit, list, search and paginate books (store staff)         |
-| Accounts      | Customer registration and login, roles (customer, staff)         |
-| Favorites     | Customers save books to a favorites list                         |
-| Reservations  | Hold a book for a limited time, then release it automatically    |
-| Orders        | Buy physical copies, with safe stock handling                    |
-| Digital books | Buy an online edition and download it through time-limited links |
-| Store tools   | Inventory adjustments, low-stock alerts, sales reports           |
+| Area          | What                                                     |
+| ------------- | -------------------------------------------------------- |
+| Accounts      | Registration, login, roles                               |
+| Catalog       | Manage books, browse with search, sorting and pagination |
+| Favorites     | Save books to a list                                     |
+| Reservations  | Hold a book for a limited time                           |
+| Orders        | Buy physical copies, with safe stock handling            |
+| Payments      | Pay for an order, and get refunded                       |
+| Digital books | Buy an online edition and download it                    |
+| Store tools   | Inventory adjustments, low-stock alerts, sales reports   |
 
-Payments are **out of scope** for now: orders are recorded, and card payments would be handed to an external provider later. This API will never store card numbers.
+Card numbers are never stored: payment goes through an external provider.
+
+See [ROADMAP.md](ROADMAP.md) for the order of work.
 
 ## Tech stack
 
-- **Language:** Go 1.27+
-- **HTTP:** `net/http` with the standard library router (`ServeMux` method and wildcard patterns)
-- **Database:** PostgreSQL, accessed with [pgx](https://github.com/jackc/pgx) v5
-- **Passwords:** bcrypt
-- **Configuration:** [ardanlabs/conf](https://github.com/ardanlabs/conf)
-- **CI:** GitHub Actions
+Go, PostgreSQL, [pgx](https://github.com/jackc/pgx), `net/http` and `log/slog` from the standard library, GitHub Actions.
 
-## Getting started
+## Running it
 
-Requirements: Go 1.27 or later. A PostgreSQL server is needed for anything that touches the database (the database schema and migrations are still to be added).
+A PostgreSQL server is needed for anything that touches the database.
 
 ```sh
-git clone https://github.com/ousloob/bookstore.git
-cd bookstore
 make run
+curl localhost:3000/
 ```
-
-The server listens on port 3000 by default:
-
-```sh
-curl http://localhost:3000/
-```
-
-Configuration (web timeouts, listen address, database host, name and credentials) is defined in [`api/sales/main.go`](api/sales/main.go).
 
 ## Development
 
@@ -76,26 +54,7 @@ make check      # lint + vulncheck + test
 make fix        # apply the modernizations that make lint reports
 ```
 
-These are the same checks CI runs, with staticcheck and govulncheck
-pinned to the versions at the top of the [Makefile](Makefile), so no tool
-installation is needed.
-
-## Project layout
-
-```
-api/sales/              entry point, routing and handlers
-business/domain/        business logic and storage, one package per domain (books, users)
-business/sys/           shared support code (database, validation)
-support/web/mid/        HTTP middleware
-```
-
-## Data
-
-This project uses **made-up sample data only**. No real customer or personal data belongs in this repository.
-
-## Contributing
-
-Issues and pull requests are welcome. Please open an issue first for larger changes.
+These are the checks CI runs, with the tools pinned in the [Makefile](Makefile), so nothing needs installing.
 
 ## License
 
