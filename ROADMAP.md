@@ -1,93 +1,104 @@
 # Roadmap
 
-Rough effort estimates are in hours. Order matters: later milestones depend on earlier ones.
+Working document: finished items are removed, the file is deleted once empty. Milestones are in dependency order. One small commit per item; update the README's tech stack in the same commit.
 
-## M0. Foundations, cleanup and modernization (about 16 h)
+## M0. Groundwork
 
-Do this first, while the database code is still tiny. One small commit per item, and update the README's tech stack in the same commit as each change.
+**Configuration and secrets**
 
-**Toolchain and dependencies**
-
-- [x] Rename the Go module from `github.com/ousloob/booksales` to `github.com/ousloob/bookstore`, and fix the README badges
-- [x] Move to Go 1.27 (latest patch at the time of writing: 1.27.3) and keep up with patch releases
-- [ ] Use `encoding/json/v2` for request and response bodies
-- [x] Replace `sqlx` and `lib/pq` with `pgx` v5 (`pgxpool`, named arguments; use `CollectRows` and `RowToStructByName` once there are read queries)
-- [x] Update all remaining dependencies, and keep `govulncheck` green
-- [x] Drop the `vendor/` directory and rely on the module cache (`go.sum` already pins dependencies)
-- [x] Replace `github.com/google/uuid` with the standard library `uuid` package (Go 1.27+)
-- [x] Evaluate replacing `golang.org/x/crypto/bcrypt`: the standard library has no bcrypt or argon2id (only `crypto/pbkdf2`), and `x/crypto` is maintained by the Go team with monthly releases, so keep it
-- [x] Evaluate replacing `chi` with the standard library router. Decision: move to `net/http.ServeMux`. Everything `chi` does for this project today (method routing, `Use`, a status-recording response writer) the standard library covers since Go 1.22 (`GET /books/{id}` patterns, `r.PathValue`, automatic 405 with an `Allow` header) or costs about 30 lines in `support/web`. Known trade-offs: no custom 405 body, and per-group middleware means wrapping a sub-mux instead of `chi.Group`
-- [x] Replace `chi` with `net/http.ServeMux`: register `METHOD /path` patterns, add a middleware chain helper and a response writer that records status and bytes (with `Unwrap` for `http.ResponseController`), and drop `chi/middleware` from `mid.Logger`
-
-**CI and tooling**
-
-- [x] Replace CircleCI with GitHub Actions: tests, `go vet`, `staticcheck`, `govulncheck`
-- [x] Pin tool versions instead of using `@latest`, and read the Go version from `go.mod`
-- [ ] Enable Dependabot for Go modules and for the workflow files
+- [ ] Replace `ardanlabs/conf` with [`caarlos0/env`](https://github.com/caarlos0/env): defaults in `envDefault` tags, no example file
+- [ ] Secrets (database user and password, token signing key, anything sensitive) live in [Infisical](https://infisical.com) and reach the app as environment variables: `infisical run` locally, the Infisical operator in Kubernetes
 
 **Database**
 
-- [ ] Run PostgreSQL 18 (current stable release) in development and in CI; consider 19 after its final release
-- [ ] Add schema migrations (Goose) for users and books
-- [ ] Map PostgreSQL unique-violation errors to `ErrDBDuplicatedEntry`
+- [ ] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`); unset keeps the pgx default
+- [ ] PostgreSQL 18 in development and CI
+- [ ] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied by `make migrate` and at startup
+- [ ] Seed data for demos: idempotent SQL in `migrations/seed/`, run by `make seed`
+- [ ] Map unique violations (`23505`) to `ErrDBDuplicatedEntry`
+- [ ] UUID v7 IDs with the standard library `uuid.NewV7()`; v4 or raw `crypto/rand` bytes for anything that must be unguessable
+- [ ] `database.WithTx` helper for multi-step writes
 
-**Bugs and safety**
+**Code cleanup**
 
-- [x] Fix the user insert query (`date_updated` was missing its `:` in the `VALUES` list; fixed when the query moved to `pgx` named arguments)
-- [ ] Fix error handling in `userbiz.Create`: errors other than a duplicate email are currently swallowed
-- [ ] Stop logging the full configuration at startup (it includes the database password), and remove the default database user and password from the code
-- [ ] Add `.env.example` and document the environment variables
-- [x] Pass the logger through the routing setup (it was nil, and the request logger used the global `slog` logger)
+- [ ] Fix `userbiz.Create`: every error except a duplicate email is swallowed
+- [ ] Business and storage layers take `*slog.Logger` instead of `*log.Logger`
+- [ ] `encoding/json/v2` for request and response bodies
+- [ ] Optional: rename `userbiz` and `bookbiz` to `business/user` and `business/book` (storage stays `userdb`, `bookdb`)
 
-**Tests**
+**Tooling and CI**
 
-- [ ] Replace the placeholder tests with real ones, using a PostgreSQL container for integration tests
+- [ ] [golangci-lint v2](https://golangci-lint.run) with `gosec` enabled (minus G104 and G115, which duplicate errcheck and flag every integer conversion) replaces `staticcheck`; keep `go fix -diff` and `govulncheck`
+- [ ] [OpenSSF Scorecard](https://github.com/ossf/scorecard-action) workflow on a weekly schedule and on pushes to `main`, results published for the badge
+- [ ] Dependabot for Go modules and workflow files
+- [ ] [GoReleaser](https://goreleaser.com) on tag push: binaries, checksums, changelog (container image added in M8)
+- [ ] Integration tests against PostgreSQL with [testcontainers-go](https://golang.testcontainers.org), run in CI; replace the placeholder tests
 
-## M1. Catalogue (about 8 h)
+## M1. API contract
 
-- [ ] Book model: ISBN as a string with validation (ISBN-10 can end in `X`), price in cents, stock, formats (physical, digital)
-- [ ] Staff endpoints: create, update and delete books
-- [ ] Public endpoints: list, search by title, author or ISBN, pagination and sorting
-- [ ] Consistent JSON error responses and request validation
-- [ ] OpenAPI description of the API
+- [ ] All routes under `/v1`
+- [ ] Every error as [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details (`application/problem+json`), including the mux's 404 and 405, with an `errors` extension for field validation
+- [ ] List conventions: `page`, `page_size` (default 20, max 100), `sort=field` or `sort=-field` from a per-resource allow-list, filters as query parameters
+- [ ] Hand-written OpenAPI 3.1 in `api/openapi.yaml`, no code generation, served at `GET /v1/openapi.yaml`, linted in CI
 
-## M2. Accounts and authentication (about 8 h)
+## M2. Users and books
 
-- [ ] Register and log in with email and password (bcrypt, or argon2id)
-- [ ] Short-lived access tokens, validated on every request (signature, issuer, audience, expiry)
-- [ ] Roles: customer and staff, enforced per route
-- [ ] Rate limiting on login
-- [ ] Later, optional: sign in with an external identity provider (OpenID Connect)
+- [ ] Users: create, get, update, delete; list with filters (`email`, `role`), sorting and pagination; the password hash never leaves the storage layer
+- [ ] Book model: ISBN string with validation, price in cents, stock, formats (physical, digital)
+- [ ] Books: create, update, delete (staff); get and list with filters (`title`, `author`, `isbn`, `format`, `in_stock`), sorting and pagination
 
-## M3. Favorites, reservations and orders (about 10 h)
+## M3. Authentication and roles
 
-- [ ] Favorites: add, remove and list
-- [ ] Reservations: hold a copy for a set number of days, release it automatically when it expires
-- [ ] Orders for physical copies, with stock decremented safely inside a database transaction (no overselling under concurrent requests)
-- [ ] Order status: created, ready, collected, cancelled
+- [ ] Passwords hashed with argon2id (`golang.org/x/crypto/argon2`), PHC format, rehash on login when parameters change
+- [ ] Login with email and password, same error whether or not the email exists
+- [ ] Access token: short-lived JWT, Ed25519, `golang-jwt/jwt/v5`, validated on every request
+- [ ] Refresh token: random bytes from `crypto/rand`, stored hashed, bound to a session, rotated on every use; reuse ends the session; logout revokes the session
+- [ ] `Authorizer` interface behind one middleware; first implementation: roles `customer` and `staff` from the token. Move to [Casbin](https://casbin.org) when roles multiply
+- [ ] Rate limiting on login and refresh
+- [ ] Security audit log: login, failed login, refresh reuse, logout
 
-## M4. Digital books (about 6 h)
+## M4. Favorites, reservations and orders
+
+- [ ] Favorites: add, remove, list
+- [ ] Reservations: hold a copy for a number of days, auto-release on expiry
+- [ ] Orders with status: created, ready, collected, cancelled
+- [ ] Order creation in one transaction: conditional stock decrement (`stock >= qty`, zero rows means out of stock), then order and lines; `CHECK (stock >= 0)`
+- [ ] Idempotency keys: `Idempotency-Key` header stored with the user, a body hash and the response, in the same transaction; replay returns the stored response, different body 422, in flight 409, expiry 24 h
+- [ ] Tests: concurrent orders for the last copy; same request twice with one key
+
+## M5. Payments
+
+- [ ] Payment providers behind one interface, so every method shares the same order flow
+- [ ] Card payments through the provider's hosted checkout; no card data reaches this API
+- [ ] [Wero](https://wero-wallet.eu) account-to-account payments through a PSP that supports it (merchant acceptance is still rolling out, so availability depends on country)
+- [ ] Order states for payment: pending, paid, failed, refunded; stock stays held while payment is pending and is released on timeout
+- [ ] Provider webhook endpoint: signature verified, idempotent, replay-safe
+- [ ] Refunds and cancellations
+- [ ] Tests against the provider sandbox
+
+## M6. Digital books
 
 - [ ] Digital library per customer
-- [ ] File storage behind an interface (local disk first)
+- [ ] File storage behind an interface, local disk first
 - [ ] Download through time-limited signed links
 
-## M5. Store management ideas (pick what is useful)
+## M7. Observability
 
-- [ ] Inventory adjustments with an audit log (who changed what, and when)
-- [ ] Low-stock alerts
-- [ ] Back-in-stock notification list
-- [ ] Sales and bestseller reports
-- [ ] Book metadata import by ISBN from a public source such as Open Library
-- [ ] CSV import and export of the catalogue
-- [ ] Returns and cancellations
-- [ ] Discount codes
-- [ ] Reviews and ratings
-- [ ] Events (author signings, reading groups)
+- [ ] `log/slog`: `tint` in development, JSON in production; request ID and trace ID on every line
+- [ ] OpenTelemetry: `otelhttp`, `otelpgx`, request metrics, OTLP export, set up in `support/telemetry`
+- [ ] `/healthz` and `/readyz` (pings the database)
+- [ ] Grafana, Prometheus, Tempo, Loki and Alloy deployed in the kind dev overlay (M8), one starter dashboard committed
 
-## M6. Operations and quality (about 4 h)
+## M8. Release and deployment
 
-- [ ] Dockerfile and `docker-compose.yml` for local development
-- [ ] Health and readiness endpoints
-- [ ] Metrics and request tracing
-- [ ] Optional: Kubernetes manifests
+- [ ] Dockerfile: multi-stage, distroless, non-root; image pushed to GHCR by GoReleaser
+- [ ] Kustomize: `deploy/base` (Deployment, Service, ConfigMap, migration Job) and `deploy/overlays/{dev,prod}`; dev adds PostgreSQL, the observability stack and an `InfisicalSecret`
+- [ ] [kind](https://kind.sigs.k8s.io) only, no Docker Compose: `make kind-up` creates the cluster and applies the dev overlay; for fast iteration run the binary locally against the port-forwarded database
+- [ ] CI job: build the image, load into kind, apply dev, check `/readyz`
+
+## M9. Maybe later
+
+- [ ] Argo CD and a Helm chart, once there is more than one environment
+- [ ] Web front end, once payments work end to end
+- [ ] Store tools: inventory audit log, low-stock alerts, sales reports, ISBN import from Open Library, CSV import and export
+- [ ] Returns, discount codes, reviews, events
