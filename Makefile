@@ -12,6 +12,38 @@ tidy:
 	go mod tidy
 
 # ==============================================================================
+# Local PostgreSQL
+#
+# DB_USER and DB_PASSWORD come from Infisical, so these targets are run as
+# `infisical run -- make db-up`. The credentials are baked into the data
+# directory the first time the server initializes it: changing them in
+# Infisical afterwards has no effect until `make db-reset`.
+
+POSTGRES_IMAGE := postgres:18-alpine
+DB_CONTAINER   := bookstore-db
+DB_VOLUME      := bookstore-db-data
+
+.PHONY: db-up db-down db-reset db-psql
+db-up:
+	docker run -d --name $(DB_CONTAINER) \
+		-e POSTGRES_USER="$${DB_USER:?run via: infisical run -- make db-up}" \
+		-e POSTGRES_PASSWORD="$${DB_PASSWORD:?run via: infisical run -- make db-up}" \
+		-e POSTGRES_DB=bookdb \
+		-p 5432:5432 \
+		-v $(DB_VOLUME):/var/lib/postgresql \
+		$(POSTGRES_IMAGE)
+
+db-down:
+	docker rm -f $(DB_CONTAINER)
+
+# Destructive: drops the database and every row in it.
+db-reset: db-down
+	docker volume rm $(DB_VOLUME)
+
+db-psql:
+	docker exec -it $(DB_CONTAINER) psql -U "$${DB_USER:?}" -d bookdb
+
+# ==============================================================================
 # Running the API locally
 
 .PHONY: run

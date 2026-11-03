@@ -36,16 +36,44 @@ Go, PostgreSQL, [pgx](https://github.com/jackc/pgx), [caarlos0/env](https://gith
 
 ## Running it
 
-A PostgreSQL server is needed for anything that touches the database.
+Configuration comes from the environment, with the defaults in the config struct
+in [api/sales/main.go](api/sales/main.go). Only the database credentials have no
+default, and they are secrets, so they live in [Infisical](https://infisical.com)
+rather than in a file:
+
+| Secret        | What                   |
+| ------------- | ---------------------- |
+| `DB_USER`     | PostgreSQL role        |
+| `DB_PASSWORD` | Password for that role |
+
+`infisical run` injects them as environment variables, so nothing in the
+application knows Infisical exists. One-time setup:
 
 ```sh
-make run
+infisical login          # stores the credentials in the OS keyring
+infisical init           # writes .infisical.json (project id, no secrets)
+```
+
+Then start PostgreSQL and the API:
+
+```sh
+infisical run -- make db-up   # creates the role from the same two secrets
+infisical run -- make run
 curl localhost:3000/
 ```
+
+`make db-up` runs PostgreSQL 18 in Docker on port 5432. The credentials are
+written into the data directory the first time the server starts, so changing
+them in Infisical later has no effect until `make db-reset`, which drops the
+container and its volume.
 
 ## Development
 
 ```sh
+make db-up      # start PostgreSQL 18 in Docker (needs infisical run)
+make db-down    # stop it, keeping the data
+make db-reset   # stop it and delete the data
+make db-psql    # open a psql shell against it
 make test       # run the tests
 make lint       # go vet + go fix -diff + staticcheck
 make vulncheck  # govulncheck
