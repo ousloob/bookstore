@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,20 +16,38 @@ var (
 	ErrDBDuplicatedEntry = errors.New("duplicated entry")
 )
 
-// Config is the required properties to use the database.
+// Config is the required properties to use the database. Every pool setting
+// left at zero keeps the pgxpool default.
 type Config struct {
 	User     string
 	Password string
 	Host     string
 	Name     string
-	// MaxConns is the maximum number of connections in the pool. Zero keeps
-	// the pgxpool default (the greater of 4 and the number of CPUs).
+	// MaxConns is the maximum number of connections in the pool. Default:
+	// the greater of 4 and the number of CPUs.
 	MaxConns int
+	// MinConns is the minimum number of connections, idle or in use, the
+	// pool keeps open. Default: 0.
+	MinConns int
 	// MinIdleConns is the number of idle connections the pool keeps open so
-	// that a request does not have to wait for a new connection. Zero keeps
-	// none.
+	// that a request does not have to wait for a new connection. Default: 0.
 	MinIdleConns int
-	DisableTLS   bool
+	// MaxConnLifetime is how long a connection may live before it is closed.
+	// Default: 1h.
+	MaxConnLifetime time.Duration
+	// MaxConnLifetimeJitter adds a random duration up to this value to
+	// MaxConnLifetime so connections are not all closed at once. Default: 0.
+	MaxConnLifetimeJitter time.Duration
+	// MaxConnIdleTime is how long a connection may stay idle before it is
+	// closed by the health check. Default: 30m.
+	MaxConnIdleTime time.Duration
+	// HealthCheckPeriod is how often the pool checks idle connections.
+	// Default: 1m.
+	HealthCheckPeriod time.Duration
+	// PingTimeout is how long the pool waits for a ping reply before it
+	// treats the connection as broken. Default: no timeout.
+	PingTimeout time.Duration
+	DisableTLS  bool
 }
 
 // Open knows how to open a database connection pool based on the
@@ -59,8 +78,26 @@ func Open(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
 	if cfg.MaxConns > 0 {
 		poolCfg.MaxConns = int32(cfg.MaxConns)
 	}
+	if cfg.MinConns > 0 {
+		poolCfg.MinConns = int32(cfg.MinConns)
+	}
 	if cfg.MinIdleConns > 0 {
 		poolCfg.MinIdleConns = int32(cfg.MinIdleConns)
+	}
+	if cfg.MaxConnLifetime > 0 {
+		poolCfg.MaxConnLifetime = cfg.MaxConnLifetime
+	}
+	if cfg.MaxConnLifetimeJitter > 0 {
+		poolCfg.MaxConnLifetimeJitter = cfg.MaxConnLifetimeJitter
+	}
+	if cfg.MaxConnIdleTime > 0 {
+		poolCfg.MaxConnIdleTime = cfg.MaxConnIdleTime
+	}
+	if cfg.HealthCheckPeriod > 0 {
+		poolCfg.HealthCheckPeriod = cfg.HealthCheckPeriod
+	}
+	if cfg.PingTimeout > 0 {
+		poolCfg.PingTimeout = cfg.PingTimeout
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)

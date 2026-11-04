@@ -52,13 +52,19 @@ func run(ctx context.Context, log *slog.Logger) error {
 			APIHost         string        `env:"API_HOST" envDefault:"0.0.0.0:3000"`
 		} `envPrefix:"WEB_"`
 		DB struct {
-			User         string `env:"USER"`
-			Password     string `env:"PASSWORD"`
-			Host         string `env:"HOST" envDefault:"localhost"`
-			Name         string `env:"NAME" envDefault:"bookdb"`
-			MaxConns     int    `env:"MAX_CONNS" envDefault:"0"`
-			MinIdleConns int    `env:"MIN_IDLE_CONNS" envDefault:"0"`
-			DisableTLS   bool   `env:"DISABLE_TLS" envDefault:"true"`
+			User                  string        `env:"USER"`
+			Password              string        `env:"PASSWORD"`
+			Host                  string        `env:"HOST" envDefault:"localhost"`
+			Name                  string        `env:"NAME" envDefault:"bookdb"`
+			MaxConns              int           `env:"MAX_CONNS" envDefault:"0"`
+			MinConns              int           `env:"MIN_CONNS" envDefault:"0"`
+			MinIdleConns          int           `env:"MIN_IDLE_CONNS" envDefault:"0"`
+			MaxConnLifetime       time.Duration `env:"MAX_CONN_LIFETIME" envDefault:"0s"`
+			MaxConnLifetimeJitter time.Duration `env:"MAX_CONN_LIFETIME_JITTER" envDefault:"0s"`
+			MaxConnIdleTime       time.Duration `env:"MAX_CONN_IDLE_TIME" envDefault:"0s"`
+			HealthCheckPeriod     time.Duration `env:"HEALTH_CHECK_PERIOD" envDefault:"0s"`
+			PingTimeout           time.Duration `env:"PING_TIMEOUT" envDefault:"0s"`
+			DisableTLS            bool          `env:"DISABLE_TLS" envDefault:"true"`
 		} `envPrefix:"DB_"`
 	}
 
@@ -78,13 +84,19 @@ func run(ctx context.Context, log *slog.Logger) error {
 	log.InfoContext(ctx, "startup", "status", "initalizing database support", "hostport", cfg.DB.Host)
 
 	db, err := database.Open(ctx, database.Config{
-		User:         cfg.DB.User,
-		Password:     cfg.DB.Password,
-		Host:         cfg.DB.Host,
-		Name:         cfg.DB.Name,
-		MaxConns:     cfg.DB.MaxConns,
-		MinIdleConns: cfg.DB.MinIdleConns,
-		DisableTLS:   cfg.DB.DisableTLS,
+		User:                  cfg.DB.User,
+		Password:              cfg.DB.Password,
+		Host:                  cfg.DB.Host,
+		Name:                  cfg.DB.Name,
+		MaxConns:              cfg.DB.MaxConns,
+		MinConns:              cfg.DB.MinConns,
+		MinIdleConns:          cfg.DB.MinIdleConns,
+		MaxConnLifetime:       cfg.DB.MaxConnLifetime,
+		MaxConnLifetimeJitter: cfg.DB.MaxConnLifetimeJitter,
+		MaxConnIdleTime:       cfg.DB.MaxConnIdleTime,
+		HealthCheckPeriod:     cfg.DB.HealthCheckPeriod,
+		PingTimeout:           cfg.DB.PingTimeout,
+		DisableTLS:            cfg.DB.DisableTLS,
 	})
 	if err != nil {
 		return fmt.Errorf("open db: %w", err)

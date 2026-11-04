@@ -1,6 +1,6 @@
 # Roadmap
 
-Working document: finished items are removed, the file is deleted once empty. Milestones are in dependency order. One small commit per item; update the README's tech stack in the same commit.
+Working document: finished items are checked off. Milestones are in dependency order. One small commit per item; update the README's tech stack in the same commit.
 
 ## M0. Groundwork
 
@@ -10,7 +10,7 @@ Working document: finished items are removed, the file is deleted once empty. Mi
 
 **Database**
 
-- [ ] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`); unset keeps the pgx default
+- [x] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`, `PingTimeout`); unset keeps the pgx default
 - [ ] PostgreSQL 18 in development and CI
 - [ ] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied by `make migrate` and at startup
 - [ ] Seed data for demos: idempotent SQL in `migrations/seed/`, run by `make seed`
