@@ -12,9 +12,4 @@ type Bus struct {
 }
 
 // Routes binds all the version 1 routes.
-func Routes(mux *http.ServeMux, bus Bus) {
-	// {$} matches only "/", not every path as a bare "/" pattern would.
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Salam Alaikoum"))
-	})
-}
+func Routes(mux *http.ServeMux, bus Bus) {}
