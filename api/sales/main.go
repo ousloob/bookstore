@@ -15,6 +15,7 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/ousloob/bookstore/api/sales/routing"
 	"github.com/ousloob/bookstore/business/sys/database"
+	"github.com/ousloob/bookstore/migrations"
 )
 
 var build = "develop"
@@ -102,6 +103,12 @@ func run(ctx context.Context, log *slog.Logger) error {
 		return fmt.Errorf("open db: %w", err)
 	}
 	defer db.Close()
+
+	log.InfoContext(ctx, "startup", "status", "applying database migrations")
+
+	if err := migrations.Apply(ctx, log, db); err != nil {
+		return fmt.Errorf("migrate db: %w", err)
+	}
 
 	// =========================================================================
 	// Start API Service

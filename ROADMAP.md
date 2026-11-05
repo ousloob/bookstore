@@ -12,7 +12,7 @@ Working document: finished items are checked off. Milestones are in dependency o
 
 - [x] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`, `PingTimeout`); unset keeps the pgx default
 - [ ] PostgreSQL 18 in development and CI
-- [ ] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied by `make migrate` and at startup
+- [x] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied at startup
 - [ ] Seed data for demos: idempotent SQL in `migrations/seed/`, run by `make seed`
 - [ ] Map unique violations (`23505`) to `ErrDBDuplicatedEntry`
 - [ ] UUID v7 IDs with the standard library `uuid.NewV7()`; v4 or raw `crypto/rand` bytes for anything that must be unguessable
