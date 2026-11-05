@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: bookstore-system
+
+resources:
+  - ../base
+
+# The image is built locally and loaded into kind, never pulled from a registry.
+images:
+  - name: bookstore/sales-api
+    newName: localhost/bookstore/sales-api
+    newTag: dev
+
+patches:
+  # Expose the API on the node port that kind maps to localhost:3000.
+  - target:
+      kind: Service
+      name: sales-service
+    patch: |-
+      - op: add
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30000
+
+  # kind has the image loaded already; never reach out to a registry for it.
+  - target:
+      kind: Deployment
+      name: sales
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent

@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sales-service
+spec:
+  selector:
+    app: sales
+  ports:
+    - name: sales-api
+      port: 3000
+      targetPort: sales-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sales
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sales
+  template:
+    metadata:
+      labels:
+        app: sales
+    spec:
+      # Match the sales user created in Containerfile.sales.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: sales-api
+          image: bookstore/sales-api
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # Injects DB_USER and DB_PASSWORD, named exactly as the config
+          # struct in api/sales/main.go expects them.
+          envFrom:
+            - secretRef:
+                name: database-credentials
+          env:
+            - name: DB_HOST
+              value: database-service
+            - name: DB_NAME
+              value: bookdb
+          ports:
+            - name: sales-api
+              containerPort: 3000
