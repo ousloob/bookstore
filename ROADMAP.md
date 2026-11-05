@@ -1,8 +1,14 @@
 # Roadmap
 
-Working document: finished items are removed, the file is deleted once empty. Milestones are in dependency order. One small commit per item; update the README's tech stack in the same commit.
+Working document: finished items are checked off. Milestones are in dependency order. One small commit per item; update the README's tech stack in the same commit.
 
 ## M0. Groundwork
+
+**Local environment**
+
+- [ ] [Podman](https://podman.io) as the container engine, [kind](https://kind.sigs.k8s.io) on its Podman provider; kind only, no Docker Compose
+- [ ] `make kind-up` creates the cluster and applies `deploy/overlays/dev`, `make kind-down` deletes it
+- [ ] PostgreSQL 18 in the Kustomize dev overlay (StatefulSet, volume, Service), credentials from the same `DB_USER` and `DB_PASSWORD` the app reads; `make db-forward` port-forwards it so `make run` works against a real database
 
 **Configuration and secrets**
 
@@ -10,9 +16,8 @@ Working document: finished items are removed, the file is deleted once empty. Mi
 
 **Database**
 
-- [ ] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`); unset keeps the pgx default
-- [ ] PostgreSQL 18 in development and CI
-- [ ] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied by `make migrate` and at startup
+- [x] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`, `PingTimeout`); unset keeps the pgx default
+- [x] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied at startup
 - [ ] Seed data for demos: idempotent SQL in `migrations/seed/`, run by `make seed`
 - [ ] Map unique violations (`23505`) to `ErrDBDuplicatedEntry`
 - [ ] UUID v7 IDs with the standard library `uuid.NewV7()`; v4 or raw `crypto/rand` bytes for anything that must be unguessable
@@ -30,7 +35,7 @@ Working document: finished items are removed, the file is deleted once empty. Mi
 - [ ] [golangci-lint v2](https://golangci-lint.run) with `gosec` enabled (minus G104 and G115, which duplicate errcheck and flag every integer conversion) replaces `staticcheck`; keep `go fix -diff` and `govulncheck`
 - [ ] Dependabot for Go modules and workflow files
 - [ ] [GoReleaser](https://goreleaser.com) on tag push: binaries, checksums, changelog (container image added in M8)
-- [ ] Integration tests against PostgreSQL with [testcontainers-go](https://golang.testcontainers.org), run in CI; replace the placeholder tests
+- [ ] Integration tests against PostgreSQL 18 with [testcontainers-go](https://golang.testcontainers.org), run in CI; replace the placeholder tests
 
 ## M1. API contract
 
@@ -90,8 +95,7 @@ Working document: finished items are removed, the file is deleted once empty. Mi
 ## M8. Release and deployment
 
 - [ ] Dockerfile: multi-stage, distroless, non-root; image pushed to GHCR by GoReleaser
-- [ ] Kustomize: `deploy/base` (Deployment, Service, ConfigMap, migration Job) and `deploy/overlays/{dev,prod}`; dev adds PostgreSQL, the observability stack and an `InfisicalSecret`
-- [ ] [kind](https://kind.sigs.k8s.io) only, no Docker Compose: `make kind-up` creates the cluster and applies the dev overlay; for fast iteration run the binary locally against the port-forwarded database
+- [ ] Kustomize: `deploy/base` (Deployment, Service, ConfigMap, migration Job) and `deploy/overlays/prod`; the dev overlay from M0 adds the app, the observability stack and an `InfisicalSecret`
 - [ ] CI job: build the image, load into kind, apply dev, check `/readyz`
 
 ## M9. Maybe later
