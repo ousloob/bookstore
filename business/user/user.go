@@ -1,5 +1,5 @@
-// Package userbiz provides a functionality of a core business API for user.
-package userbiz
+// Package user provides the core business API for users.
+package user
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/ousloob/bookstore/business/domain/userbiz/userdb"
+	"github.com/ousloob/bookstore/business/user/userdb"
 	"github.com/ousloob/bookstore/business/sys/database"
 	"github.com/ousloob/bookstore/business/sys/validate"
 	"golang.org/x/crypto/bcrypt"

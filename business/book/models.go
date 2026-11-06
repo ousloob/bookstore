@@ -1,4 +1,4 @@
-package bookbiz
+package book
 
 import "time"
 
