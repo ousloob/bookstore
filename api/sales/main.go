@@ -122,7 +122,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 
 	// Construct the mux for the API calls.
 	apiMux := routing.APIMux(
-		routing.Bus{
+		routing.Config{
 			Log:      log,
 			Shutdown: shutdown,
 		},

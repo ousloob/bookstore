@@ -7,9 +7,10 @@ import (
 	"net/http"
 )
 
-type Bus struct {
+// Config carries the shared resources the v1 routes are built with.
+type Config struct {
 	Log *slog.Logger
 }
 
 // Routes binds all the version 1 routes.
-func Routes(mux *http.ServeMux, bus Bus) {}
+func Routes(mux *http.ServeMux, cfg Config) {}

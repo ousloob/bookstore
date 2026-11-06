@@ -10,18 +10,18 @@ import (
 	"github.com/ousloob/bookstore/support/web/mid"
 )
 
-// Bus carries shared resources across the application.
-type Bus struct {
+// Config carries the shared resources the routes are built with.
+type Config struct {
 	Log      *slog.Logger
 	Shutdown chan os.Signal
 }
 
 // APIMux constructs and returns the API handler: the router wrapped in
 // the application-wide middleware.
-func APIMux(bus Bus) http.Handler {
+func APIMux(cfg Config) http.Handler {
 	mux := http.NewServeMux()
 
-	v1.Routes(mux, v1.Bus{Log: bus.Log})
+	v1.Routes(mux, v1.Config{Log: cfg.Log})
 
-	return mid.Chain(mux, mid.Logger(bus.Log))
+	return mid.Chain(mux, mid.Logger(cfg.Log))
 }
