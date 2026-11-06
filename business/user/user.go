@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+	"uuid"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/ousloob/bookstore/business/user/userdb"
 	"github.com/ousloob/bookstore/business/sys/database"
-	"github.com/ousloob/bookstore/business/sys/validate"
+	"github.com/ousloob/bookstore/business/user/userdb"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -35,7 +35,7 @@ func (b *Bus) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 	}
 
 	dbUser := userdb.User{
-		ID:           validate.GenerateID(),
+		ID:           uuid.NewV7().String(),
 		Name:         nu.Name,
 		Email:        nu.Email,
 		Roles:        nu.Roles,
