@@ -6,9 +6,9 @@ Working document: finished items are checked off. Milestones are in dependency o
 
 **Local environment**
 
-- [ ] [Podman](https://podman.io) as the container engine, [kind](https://kind.sigs.k8s.io) on its Podman provider; kind only, no Docker Compose
-- [ ] `make kind-up` creates the cluster and applies `deploy/overlays/dev`, `make kind-down` deletes it
-- [ ] PostgreSQL 18 in the Kustomize dev overlay (StatefulSet, volume, Service), credentials from the same `DB_USER` and `DB_PASSWORD` the app reads; `make db-forward` port-forwards it so `make run` works against a real database
+- [x] [Podman](https://podman.io) as the container engine, [kind](https://kind.sigs.k8s.io) on its Podman provider; kind only, no Docker Compose
+- [x] `make dev-up` creates the cluster, builds and loads the image and applies `zarf/k8s/dev`; `make dev-down` deletes it
+- [x] PostgreSQL 18 in the Kustomize dev overlay `zarf/k8s/dev` (StatefulSet, volume, Service), credentials from the same `DB_USER` and `DB_PASSWORD` the app reads; `make dev-db-forward` port-forwards it so `make run` works against a real database
 
 **Configuration and secrets**
 
@@ -19,16 +19,16 @@ Working document: finished items are checked off. Milestones are in dependency o
 - [x] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`, `PingTimeout`); unset keeps the pgx default
 - [x] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied at startup
 - [ ] Seed data for demos: idempotent SQL in `migrations/seed/`, run by `make seed`
-- [ ] Map unique violations (`23505`) to `ErrDBDuplicatedEntry`
-- [ ] UUID v7 IDs with the standard library `uuid.NewV7()`; v4 or raw `crypto/rand` bytes for anything that must be unguessable
+- [x] Map unique violations (`23505`) to `ErrDuplicatedEntry`
+- [x] UUID v7 IDs with the standard library `uuid.NewV7()`; v4 or raw `crypto/rand` bytes for anything that must be unguessable
 - [ ] `database.WithTx` helper for multi-step writes
 
 **Code cleanup**
 
-- [ ] Fix `userbiz.Create`: every error except a duplicate email is swallowed
-- [ ] Business and storage layers take `*slog.Logger` instead of `*log.Logger`
+- [x] Fix `userbiz.Create`: every error except a duplicate email is swallowed
+- [x] Business and storage layers take `*slog.Logger` instead of `*log.Logger`
 - [ ] `encoding/json/v2` for request and response bodies
-- [ ] Optional: rename `userbiz` and `bookbiz` to `business/user` and `business/book` (storage stays `userdb`, `bookdb`)
+- [x] Optional: rename `userbiz` and `bookbiz` to `business/user` and `business/book` (storage stays `userdb`, `bookdb`)
 
 **Tooling and CI**
 
@@ -94,8 +94,8 @@ Working document: finished items are checked off. Milestones are in dependency o
 
 ## M8. Release and deployment
 
-- [ ] Dockerfile: multi-stage, distroless, non-root; image pushed to GHCR by GoReleaser
-- [ ] Kustomize: `deploy/base` (Deployment, Service, ConfigMap, migration Job) and `deploy/overlays/prod`; the dev overlay from M0 adds the app, the observability stack and an `InfisicalSecret`
+- [ ] Containerfile (built in M0 at `zarf/containers`: multi-stage, alpine, non-root): image pushed to GHCR by GoReleaser
+- [ ] Kustomize: `zarf/k8s/base` (done in M0: Deployment, Service; still to come: ConfigMap, migration Job) and a `zarf/k8s/prod` overlay; the dev overlay from M0 adds the app, the observability stack and an `InfisicalSecret`
 - [ ] CI job: build the image, load into kind, apply dev, check `/readyz`
 
 ## M9. Maybe later
