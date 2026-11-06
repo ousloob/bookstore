@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -21,12 +21,12 @@ var ErrUniqueEmail = errors.New("email is not unique")
 
 // Bus manages the set of APIs for user access.
 type Bus struct {
-	log *log.Logger
+	log *slog.Logger
 	db  *pgxpool.Pool
 }
 
 // NewBus constructs a data for api access.
-func NewBus(log *log.Logger, db *pgxpool.Pool) *Bus {
+func NewBus(log *slog.Logger, db *pgxpool.Pool) *Bus {
 	return &Bus{
 		log: log,
 		db:  db,

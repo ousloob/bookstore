@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,7 +20,8 @@ type Bus struct {
 	store *userdb.Bus
 }
 
-func NewCore(log *log.Logger, db *pgxpool.Pool) *Bus {
+// NewBus constructs a user business API for use.
+func NewBus(log *slog.Logger, db *pgxpool.Pool) *Bus {
 	return &Bus{
 		store: userdb.NewBus(log, db),
 	}
