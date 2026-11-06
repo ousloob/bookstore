@@ -32,7 +32,7 @@ BUILD_REF    := $(shell git rev-parse --short HEAD)
 # kind's podman support is experimental and must be opted into.
 export KIND_EXPERIMENTAL_PROVIDER := podman
 
-.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-update dev-status dev-logs
+.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-update dev-db-forward dev-status dev-logs
 
 dev-up: ## Create the kind cluster and deploy everything into it
 	kind create cluster --name $(KIND_CLUSTER) --config zarf/k8s/dev/kind-config.yaml
@@ -69,6 +69,9 @@ dev-apply: dev-secrets ## Apply the k8s manifests and wait for the database
 
 dev-update: dev-build dev-load dev-apply ## Rebuild the image and (re)deploy it
 	kubectl rollout restart deployment/sales -n $(NAMESPACE)
+
+dev-db-forward: ## Port-forward the cluster database so `make run` can reach it
+	kubectl port-forward -n $(NAMESPACE) svc/database-service 5432:5432
 
 dev-status: ## Show the pods in the cluster
 	kubectl get pods -n $(NAMESPACE) -o wide
