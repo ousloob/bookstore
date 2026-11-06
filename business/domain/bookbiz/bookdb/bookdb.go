@@ -1,2 +1,2 @@
-// Package bookdb contains user related CRUD functionality.
+// Package bookdb contains book related CRUD functionality.
 package bookdb

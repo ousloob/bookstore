@@ -47,7 +47,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	var cfg struct {
 		Web struct {
 			ReadTimeout     time.Duration `env:"READ_TIMEOUT" envDefault:"5s"`
-			WriteTimeOut    time.Duration `env:"WRITE_TIMEOUT" envDefault:"10s"`
+			WriteTimeout    time.Duration `env:"WRITE_TIMEOUT" envDefault:"10s"`
 			IdleTimeout     time.Duration `env:"IDLE_TIMEOUT" envDefault:"12s"`
 			ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"20s"`
 			APIHost         string        `env:"API_HOST" envDefault:"0.0.0.0:3000"`
@@ -82,7 +82,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	// =========================================================================
 	// Database Support
 
-	log.InfoContext(ctx, "startup", "status", "initalizing database support", "hostport", cfg.DB.Host)
+	log.InfoContext(ctx, "startup", "status", "initializing database support", "hostport", cfg.DB.Host)
 
 	db, err := database.Open(ctx, database.Config{
 		User:                  cfg.DB.User,
@@ -133,7 +133,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		Addr:         cfg.Web.APIHost,
 		Handler:      apiMux,
 		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeOut,
+		WriteTimeout: cfg.Web.WriteTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,
 		ErrorLog:     slog.NewLogLogger(log.Handler(), slog.LevelError),
 	}
@@ -160,7 +160,6 @@ func run(ctx context.Context, log *slog.Logger) error {
 
 	case sig := <-shutdown:
 		log.InfoContext(ctx, "shutdown", "status", "shutdown started", "signal", sig)
-		defer log.InfoContext(ctx, "shutdown", "status", "shutdown complete", "signal", sig)
 
 		// give outstanding requests a deadline for completion.
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
