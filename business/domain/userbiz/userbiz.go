@@ -47,6 +47,8 @@ func (b *Bus) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 		if errors.Is(err, database.ErrDBDuplicatedEntry) {
 			return User{}, fmt.Errorf("create: %w", userdb.ErrUniqueEmail)
 		}
+
+		return User{}, fmt.Errorf("create: %w", err)
 	}
 
 	return User{

@@ -8,8 +8,14 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ousloob/bookstore/business/sys/database"
 )
+
+// uniqueViolation is the PostgreSQL error code for an insert that breaks a
+// unique constraint.
+const uniqueViolation = "23505"
 
 var ErrUniqueEmail = errors.New("email is not unique")
 
@@ -60,6 +66,11 @@ func (b *Bus) Create(ctx context.Context, usr User) error {
 	}
 
 	if _, err := b.db.Exec(ctx, q, args); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation {
+			return fmt.Errorf("inserting user: %w", database.ErrDBDuplicatedEntry)
+		}
+
 		return fmt.Errorf("inserting user: %w", err)
 	}
 
