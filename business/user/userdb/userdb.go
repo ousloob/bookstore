@@ -68,7 +68,7 @@ func (b *Bus) Create(ctx context.Context, usr User) error {
 	if _, err := b.db.Exec(ctx, q, args); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation {
-			return fmt.Errorf("inserting user: %w", database.ErrDBDuplicatedEntry)
+			return fmt.Errorf("inserting user: %w", database.ErrDuplicatedEntry)
 		}
 
 		return fmt.Errorf("inserting user: %w", err)

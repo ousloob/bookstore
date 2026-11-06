@@ -13,7 +13,7 @@ import (
 
 // Set of error variables for CRUD operations.
 var (
-	ErrDBDuplicatedEntry = errors.New("duplicated entry")
+	ErrDuplicatedEntry = errors.New("duplicated entry")
 )
 
 // Config is the required properties to use the database. Every pool setting
