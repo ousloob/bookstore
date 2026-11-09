@@ -1,24 +1,26 @@
 package user
 
-import "time"
+import (
+	"net/mail"
+	"time"
+	"uuid"
+)
 
-// User represent the structure we need for moving data
-// between the app and the database.
+// User is a user as the business layer sees one.
 type User struct {
-	ID           string    `json:"user_id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Roles        []string  `json:"roles"`
-	PasswordHash []byte    `json:"password_hash"`
-	DateCreated  time.Time `json:"date_created"`
-	DateUpdated  time.Time `json:"date_updated"`
+	ID           uuid.UUID
+	Name         string
+	Email        mail.Address
+	Roles        []string
+	PasswordHash []byte
+	DateCreated  time.Time
+	DateUpdated  time.Time
 }
 
-// NewUser contains information needed to create a new User.
+// NewUser contains the information needed to create a User.
 type NewUser struct {
-	Name            string   `json:"name"`
-	Email           string   `json:"email"`
-	Roles           []string `json:"roles"`
-	Password        string   `json:"password"`
-	PasswordConfirm string   `json:"password_confirm"`
+	Name     string
+	Email    mail.Address
+	Roles    []string
+	Password string
 }

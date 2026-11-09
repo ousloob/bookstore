@@ -124,6 +124,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	apiMux := routing.APIMux(
 		routing.Config{
 			Log:      log,
+			DB:       db,
 			Shutdown: shutdown,
 		},
 	)

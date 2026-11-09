@@ -50,3 +50,13 @@ spec:
           ports:
             - name: sales-api
               containerPort: 3000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: sales-api
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: sales-api
+            periodSeconds: 5

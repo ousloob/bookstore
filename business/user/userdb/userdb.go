@@ -7,23 +7,22 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ousloob/bookstore/business/sys/database"
+	"github.com/ousloob/bookstore/business/user"
 )
 
-// uniqueViolation is the PostgreSQL error code for an insert that breaks a
-// unique constraint.
-const uniqueViolation = "23505"
-
-var ErrUniqueEmail = errors.New("email is not unique")
-
-// Bus manages the set of APIs for user access.
+// Bus manages the set of APIs for user database access.
 type Bus struct {
 	log *slog.Logger
 	db  *pgxpool.Pool
 }
+
+// Check that the storage layer keeps satisfying the business contract.
+var _ user.Storer = (*Bus)(nil)
 
 // NewBus constructs a data for api access.
 func NewBus(log *slog.Logger, db *pgxpool.Pool) *Bus {
@@ -34,7 +33,7 @@ func NewBus(log *slog.Logger, db *pgxpool.Pool) *Bus {
 }
 
 // Create inserts a new user into the database.
-func (b *Bus) Create(ctx context.Context, usr User) error {
+func (b *Bus) Create(ctx context.Context, usr user.User) error {
 	const q = `
 	INSERT INTO users (
         user_id,
@@ -55,19 +54,21 @@ func (b *Bus) Create(ctx context.Context, usr User) error {
         @date_updated
     )`
 
+	dbUsr := toDBUser(usr)
+
 	args := pgx.NamedArgs{
-		"user_id":       usr.ID,
-		"name":          usr.Name,
-		"email":         usr.Email,
-		"password_hash": usr.PasswordHash,
-		"roles":         usr.Roles,
-		"date_created":  usr.DateCreated,
-		"date_updated":  usr.DateUpdated,
+		"user_id":       dbUsr.ID,
+		"name":          dbUsr.Name,
+		"email":         dbUsr.Email,
+		"password_hash": dbUsr.PasswordHash,
+		"roles":         dbUsr.Roles,
+		"date_created":  dbUsr.DateCreated,
+		"date_updated":  dbUsr.DateUpdated,
 	}
 
 	if _, err := b.db.Exec(ctx, q, args); err != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation {
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
 			return fmt.Errorf("inserting user: %w", database.ErrDuplicatedEntry)
 		}
 

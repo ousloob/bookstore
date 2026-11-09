@@ -9,21 +9,29 @@ import (
 	"time"
 	"uuid"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ousloob/bookstore/business/sys/database"
-	"github.com/ousloob/bookstore/business/user/userdb"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// ErrUniqueEmail is returned when the email is already taken.
+var ErrUniqueEmail = errors.New("email is not unique")
+
+// Storer is the storage this business API needs. userdb implements it.
+type Storer interface {
+	Create(ctx context.Context, usr User) error
+}
+
 // Bus manages the set of APIs for user access.
 type Bus struct {
-	store *userdb.Bus
+	log   *slog.Logger
+	store Storer
 }
 
 // NewBus constructs a user business API for use.
-func NewBus(log *slog.Logger, db *pgxpool.Pool) *Bus {
+func NewBus(log *slog.Logger, store Storer) *Bus {
 	return &Bus{
-		store: userdb.NewBus(log, db),
+		log:   log,
+		store: store,
 	}
 }
 
@@ -34,8 +42,8 @@ func (b *Bus) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 		return User{}, fmt.Errorf("generating password hash: %w", err)
 	}
 
-	dbUser := userdb.User{
-		ID:           uuid.NewV7().String(),
+	usr := User{
+		ID:           uuid.NewV7(),
 		Name:         nu.Name,
 		Email:        nu.Email,
 		Roles:        nu.Roles,
@@ -44,21 +52,13 @@ func (b *Bus) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 		DateUpdated:  now,
 	}
 
-	if err := b.store.Create(ctx, dbUser); err != nil {
+	if err := b.store.Create(ctx, usr); err != nil {
 		if errors.Is(err, database.ErrDuplicatedEntry) {
-			return User{}, fmt.Errorf("create: %w", userdb.ErrUniqueEmail)
+			return User{}, fmt.Errorf("create: %w", ErrUniqueEmail)
 		}
 
 		return User{}, fmt.Errorf("create: %w", err)
 	}
 
-	return User{
-		ID:           dbUser.ID,
-		Name:         dbUser.Name,
-		Email:        dbUser.Email,
-		Roles:        dbUser.Roles,
-		PasswordHash: dbUser.PasswordHash,
-		DateCreated:  dbUser.DateCreated,
-		DateUpdated:  dbUser.DateUpdated,
-	}, nil
+	return usr, nil
 }
