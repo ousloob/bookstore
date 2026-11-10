@@ -2,14 +2,12 @@
 package routing
 
 import (
-	"context"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ousloob/bookstore/api/sales/routing/checkz"
 	v1 "github.com/ousloob/bookstore/api/sales/routing/v1"
 	"github.com/ousloob/bookstore/support/web/mid"
 )
@@ -22,37 +20,15 @@ type Config struct {
 }
 
 // APIMux constructs and returns the API handler: the router wrapped in
-// the application-wide middleware.
+// the application-wide middleware. The probe endpoints sit outside the
+// middleware chain; see package checkz for why.
 func APIMux(cfg Config) http.Handler {
+	api := http.NewServeMux()
+	v1.Routes(api, v1.Config{Log: cfg.Log})
+
 	mux := http.NewServeMux()
+	checkz.Routes(mux, checkz.Config{Log: cfg.Log, DB: cfg.DB})
+	mux.Handle("/", mid.Chain(api, mid.Logger(cfg.Log)))
 
-	mux.HandleFunc("GET /healthz", healthz)
-	mux.HandleFunc("GET /readyz", readyz(cfg.DB))
-
-	v1.Routes(mux, v1.Config{Log: cfg.Log})
-
-	return mid.Chain(mux, mid.Logger(cfg.Log))
-}
-
-// healthz is the liveness probe: the process is up and serving.
-func healthz(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = io.WriteString(w, "ok")
-}
-
-// readyz is the readiness probe: ready to take traffic, which means the
-// database answers.
-func readyz(db *pgxpool.Pool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
-		defer cancel()
-
-		if err := db.Ping(ctx); err != nil {
-			http.Error(w, "database unreachable", http.StatusServiceUnavailable)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		_, _ = io.WriteString(w, "ok")
-	}
+	return mux
 }

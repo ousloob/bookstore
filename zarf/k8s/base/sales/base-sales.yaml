@@ -52,7 +52,7 @@ spec:
               containerPort: 3000
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: sales-api
             periodSeconds: 10
           readinessProbe:
