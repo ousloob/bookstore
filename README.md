@@ -51,7 +51,7 @@ application knows Infisical exists. One-time setup:
 
 ```sh
 infisical login          # stores the credentials in the OS keyring
-infisical init           # writes .infisical.json (project id, no secrets)
+infisical init           # writes .infisical.yaml (project id, no secrets)
 ```
 
 Then, with a PostgreSQL server reachable (local cluster tooling is planned in

@@ -50,8 +50,8 @@ dev-load: ## Load the sales-api image into the kind cluster
 	rm /tmp/sales-api.tar
 
 dev-secrets: ## Sync the database credentials from Infisical into the cluster
-	@test -f .infisical.json || { \
-		echo "No .infisical.json found. Set up Infisical first:"; \
+	@test -f .infisical.yaml || { \
+		echo "No .infisical.yaml found. Set up Infisical first:"; \
 		echo "    infisical login"; \
 		echo "    infisical init"; \
 		exit 1; \
