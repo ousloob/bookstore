@@ -32,13 +32,26 @@ BUILD_REF    := $(shell git rev-parse --short HEAD)
 # kind's podman support is experimental and must be opted into.
 export KIND_EXPERIMENTAL_PROVIDER := podman
 
-.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-update dev-db-forward dev-status dev-logs
+.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-update dev-db-forward dev-status dev-logs dev-logs-db
 
+# Rootless podman needs kind to run in a cgroup with delegated controllers; a
+# plain shell session does not have one, so dev-up starts kind in its own
+# transient systemd scope (see kind's rootless guide).
 dev-up: ## Create the kind cluster and deploy everything into it
-	kind create cluster --name $(KIND_CLUSTER) --config zarf/k8s/dev/kind-config.yaml
+	systemd-run --scope --user -p "Delegate=yes" \
+		kind create cluster --name $(KIND_CLUSTER) --config zarf/k8s/dev/kind-config.yaml
 	$(MAKE) dev-update
 
+# Tear down in order. Drain the workloads through Kubernetes first, so the
+# pods get their SIGTERM and grace period with kubelet semantics; the node
+# is then empty and stops in seconds. Without this, stopping the node only
+# has its systemd SIGTERM the pod scopes, and the pause containers ignore
+# it, stalling the shutdown ~90s per unit until kind's 10s `podman rm -f`
+# SIGKILLs everything (exit 125, busy-mount volume leaks). The leading `-`
+# lets the drain fail harmlessly when the cluster is already gone.
 dev-down: ## Delete the kind cluster
+	-kubectl delete -k zarf/k8s/dev --ignore-not-found --timeout=90s
+	podman stop --ignore -t 60 $(KIND_CLUSTER)-control-plane
 	kind delete cluster --name $(KIND_CLUSTER)
 
 dev-build: ## Build the sales-api image with podman
@@ -78,6 +91,9 @@ dev-status: ## Show the pods in the cluster
 
 dev-logs: ## Tail the sales-api logs
 	kubectl logs -n $(NAMESPACE) -l app=sales -f --tail=100
+
+dev-logs-db: ## Tail the database logs
+	kubectl logs -n $(NAMESPACE) -l app=database -f --tail=100
 
 # ==============================================================================
 # Module support
