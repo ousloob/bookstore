@@ -132,10 +132,10 @@ migrate-down: ## Roll back the most recently applied migration
 seed: migrate ## Load the demo data, after bringing the schema up to date
 	go run ./api/tooling/admin seed
 
-roles ?= customer
+roles ?= admin
 
-# Example: make useradd name="Ada Lovelace" email=ada@bookstore.test roles=staff
-useradd: ## Create a user; reads the password from ADMIN_PASSWORD or stdin
+# Example: make useradd name="Ada Lovelace" email=ada@bookstore.test roles=admin
+useradd: ## Create a user; prompts for the password
 	go run ./api/tooling/admin useradd -name "$(name)" -email "$(email)" -roles "$(roles)"
 
 # ==============================================================================

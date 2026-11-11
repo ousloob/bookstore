@@ -1,7 +1,6 @@
 package command
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -16,13 +15,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ousloob/bookstore/business/user"
 	"github.com/ousloob/bookstore/business/user/userdb"
+	"golang.org/x/term"
 )
-
-// validRoles is the set of roles the API understands. It lives here only
-// until M3 gives the business layer a Role type to parse into; then this
-// check belongs there, next to the middleware that enforces it. Accepting
-// anything in the meantime would create users whose role nothing checks.
-var validRoles = []string{"customer", "staff"}
 
 // bcrypt silently ignores everything past the 72nd byte of a password, so
 // reject longer ones rather than hand out a credential that is shorter than
@@ -31,13 +25,15 @@ const maxPasswordBytes = 72
 
 const minPasswordBytes = 8
 
-// UserAdd creates a user. Use it for the first staff account, the one that
-// cannot be created through the API because creating staff requires staff.
+// UserAdd creates a user. It exists for the first admin, the one account the
+// API cannot create because creating users with roles takes an admin. Run it
+// by hand, once: the password is typed at a hidden prompt and is never stored
+// anywhere but as a hash.
 func UserAdd(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []string) error {
 	fs := flag.NewFlagSet("useradd", flag.ContinueOnError)
 	name := fs.String("name", "", "the person's full name")
 	email := fs.String("email", "", "email address, also the login")
-	roles := fs.String("roles", "customer", "comma separated roles: customer, staff")
+	roles := fs.String("roles", "admin", "comma separated roles: customer, staff, admin")
 
 	if err := fs.Parse(args); err != nil {
 		return ErrHelp
@@ -83,25 +79,23 @@ func UserAdd(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []str
 	return nil
 }
 
-func parseRoles(s string) ([]string, error) {
-	fields := strings.Split(s, ",")
+func parseRoles(s string) ([]user.Role, error) {
+	var parsed []user.Role
 
-	parsed := make([]string, 0, len(fields))
-	for _, field := range fields {
-		role := strings.TrimSpace(field)
-		if role == "" {
+	for field := range strings.SplitSeq(s, ",") {
+		name := strings.TrimSpace(field)
+		if name == "" {
 			continue
 		}
 
-		if !slices.Contains(validRoles, role) {
-			return nil, fmt.Errorf("unknown role %q, want one of %s", role, strings.Join(validRoles, ", "))
+		role, err := user.ParseRole(name)
+		if err != nil {
+			return nil, err
 		}
 
-		if slices.Contains(parsed, role) {
-			continue
+		if !slices.Contains(parsed, role) {
+			parsed = append(parsed, role)
 		}
-
-		parsed = append(parsed, role)
 	}
 
 	if len(parsed) == 0 {
@@ -111,27 +105,19 @@ func parseRoles(s string) ([]string, error) {
 	return parsed, nil
 }
 
-// readPassword takes the password from ADMIN_PASSWORD, so a Kubernetes job
-// can supply it from a secret, and otherwise from stdin, so a person can
-// pipe it in. There is deliberately no -password flag: an argument is
-// visible to anyone who can run ps.
+// readPassword prompts twice on the terminal with echo off. It refuses to
+// read from a pipe or a file: a password that arrives that way has been
+// written down somewhere first, and this command is meant to be run by a
+// person.
 func readPassword() (string, error) {
-	pass := os.Getenv("ADMIN_PASSWORD")
+	fd := int(os.Stdin.Fd())
+	if !term.IsTerminal(fd) {
+		return "", errors.New("must be run from a terminal, it prompts for the password")
+	}
 
-	if pass == "" {
-		fmt.Fprint(os.Stderr, "Password: ")
-
-		scanner := bufio.NewScanner(os.Stdin)
-		if !scanner.Scan() {
-			if err := scanner.Err(); err != nil {
-				return "", fmt.Errorf("reading password: %w", err)
-			}
-
-			return "", errors.New("no password given: set ADMIN_PASSWORD or pipe one in")
-		}
-
-		pass = strings.TrimSpace(scanner.Text())
-		fmt.Fprintln(os.Stderr)
+	pass, err := prompt(fd, "Password: ")
+	if err != nil {
+		return "", err
 	}
 
 	switch {
@@ -141,5 +127,25 @@ func readPassword() (string, error) {
 		return "", fmt.Errorf("password must be at most %d bytes, bcrypt ignores the rest", maxPasswordBytes)
 	}
 
+	again, err := prompt(fd, "Again: ")
+	if err != nil {
+		return "", err
+	}
+
+	if pass != again {
+		return "", errors.New("the passwords do not match")
+	}
+
 	return pass, nil
+}
+
+func prompt(fd int, label string) (string, error) {
+	fmt.Fprint(os.Stderr, label)
+	b, err := term.ReadPassword(fd)
+	fmt.Fprintln(os.Stderr)
+	if err != nil {
+		return "", fmt.Errorf("reading password: %w", err)
+	}
+
+	return string(b), nil
 }

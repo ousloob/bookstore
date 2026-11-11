@@ -59,7 +59,7 @@ Working document: finished items are checked off. Milestones are in dependency o
 - [ ] Login with email and password, same error whether or not the email exists
 - [ ] Access token: short-lived JWT, Ed25519, `golang-jwt/jwt/v5`, validated on every request
 - [ ] Refresh token: random bytes from `crypto/rand`, stored hashed, bound to a session, rotated on every use; reuse ends the session; logout revokes the session
-- [ ] `Authorizer` interface behind one middleware; first implementation: roles `customer` and `staff` from the token. Move to [Casbin](https://casbin.org) when roles multiply
+- [ ] `Authorizer` interface behind one middleware; first implementation: roles `customer`, `staff` and `admin` from the token, not ranked (admin manages users and roles only; signup always creates a `customer`, never from the request body). Move to [Casbin](https://casbin.org) when roles multiply
 - [ ] Rate limiting on login and refresh
 - [ ] Security audit log: login, failed login, refresh reuse, logout
 
