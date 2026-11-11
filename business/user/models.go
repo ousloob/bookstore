@@ -11,7 +11,7 @@ type User struct {
 	ID           uuid.UUID
 	Name         string
 	Email        mail.Address
-	Roles        []string
+	Roles        []Role
 	PasswordHash []byte
 	DateCreated  time.Time
 	DateUpdated  time.Time
@@ -21,6 +21,6 @@ type User struct {
 type NewUser struct {
 	Name     string
 	Email    mail.Address
-	Roles    []string
+	Roles    []Role
 	Password string
 }

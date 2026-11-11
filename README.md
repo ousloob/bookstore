@@ -74,12 +74,17 @@ infisical run -- make migrate         # apply every pending migration
 infisical run -- make migrate-status  # which migrations are applied
 infisical run -- make migrate-down    # roll back the most recent one
 infisical run -- make seed            # migrate, then load the demo data
-infisical run -- make useradd name="Ada Lovelace" email=ada@bookstore.test roles=staff
+infisical run -- make useradd name="Ada Lovelace" email=ada@bookstore.test
 ```
 
-`useradd` has no `-password` flag, because an argument is visible to anyone who
-can run `ps`. It reads `ADMIN_PASSWORD` if it is set, and otherwise prompts on
-stdin.
+`useradd` creates the first admin, once, by hand; every other account comes
+from signup or from an admin. It prompts twice for the password with echo off
+and refuses to read one from a pipe, an argument or the environment, so the
+password is never written down anywhere but as a hash.
+
+Roles are not ranked: `customer` shops, `staff` runs the store, `admin` manages
+users and roles and nothing else. An admin who also runs the store gives
+themselves `staff`.
 
 ## Development
 

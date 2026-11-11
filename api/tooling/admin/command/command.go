@@ -23,7 +23,7 @@ Commands:
   migrate status       List the migrations and which ones are applied
   migrate down         Roll back the most recently applied migration
   seed                 Load the demo data from migrations/seed
-  useradd              Create a user, with the password read from ADMIN_PASSWORD or stdin
+  useradd              Create a user; prompts for the password on the terminal
   version              Print the build reference
   help                 Print this text
 

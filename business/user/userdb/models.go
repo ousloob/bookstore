@@ -18,11 +18,16 @@ type dbUser struct {
 }
 
 func toDBUser(usr user.User) dbUser {
+	roles := make([]string, len(usr.Roles))
+	for i, r := range usr.Roles {
+		roles[i] = string(r)
+	}
+
 	return dbUser{
 		ID:           usr.ID.String(),
 		Name:         usr.Name,
 		Email:        usr.Email.Address,
-		Roles:        usr.Roles,
+		Roles:        roles,
 		PasswordHash: usr.PasswordHash,
 		DateCreated:  usr.DateCreated,
 		DateUpdated:  usr.DateUpdated,
