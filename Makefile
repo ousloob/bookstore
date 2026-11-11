@@ -110,6 +110,35 @@ run: ## Run the sales API locally (needs a reachable PostgreSQL)
 	go run api/sales/main.go
 
 # ==============================================================================
+# Admin tooling
+#
+# These need the database credentials, so run them under `infisical run --`.
+# `make dev-db-forward` in another shell points them at the cluster database.
+
+.PHONY: admin migrate migrate-status migrate-down seed useradd
+
+admin: ## Show the admin tool's commands
+	go run ./api/tooling/admin help
+
+migrate: ## Apply every pending migration
+	go run ./api/tooling/admin migrate
+
+migrate-status: ## List the migrations and which ones are applied
+	go run ./api/tooling/admin migrate status
+
+migrate-down: ## Roll back the most recently applied migration
+	go run ./api/tooling/admin migrate down
+
+seed: migrate ## Load the demo data, after bringing the schema up to date
+	go run ./api/tooling/admin seed
+
+roles ?= customer
+
+# Example: make useradd name="Ada Lovelace" email=ada@bookstore.test roles=staff
+useradd: ## Create a user; reads the password from ADMIN_PASSWORD or stdin
+	go run ./api/tooling/admin useradd -name "$(name)" -email "$(email)" -roles "$(roles)"
+
+# ==============================================================================
 # Code quality check locally
 
 .PHONY: test lint vulncheck fix check

@@ -11,6 +11,7 @@ A REST API for an independent bookstore, written in Go. The store manages the bo
 
 - HTTP server with graceful shutdown and request logging
 - PostgreSQL connection pool
+- `admin` tool: schema migrations, demo data, user creation
 - CI: lint, vulnerability scan, tests and build
 
 ## Planned
@@ -60,6 +61,25 @@ the roadmap):
 ```sh
 infisical run -- make run
 ```
+
+## Admin tool
+
+[api/tooling/admin](api/tooling/admin) is a separate binary for the tasks the
+API itself should not do. It reads the same `DB_*` variables as the API and is
+built into the same image, so the binary that migrates the schema and the one
+that serves traffic always come from the same commit.
+
+```sh
+infisical run -- make migrate         # apply every pending migration
+infisical run -- make migrate-status  # which migrations are applied
+infisical run -- make migrate-down    # roll back the most recent one
+infisical run -- make seed            # migrate, then load the demo data
+infisical run -- make useradd name="Ada Lovelace" email=ada@bookstore.test roles=staff
+```
+
+`useradd` has no `-password` flag, because an argument is visible to anyone who
+can run `ps`. It reads `ADMIN_PASSWORD` if it is set, and otherwise prompts on
+stdin.
 
 ## Development
 

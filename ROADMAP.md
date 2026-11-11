@@ -17,8 +17,11 @@ Working document: finished items are checked off. Milestones are in dependency o
 **Database**
 
 - [x] Expose every `pgxpool.Config` setting (`MaxConns`, `MinConns`, `MinIdleConns`, `MaxConnLifetime`, `MaxConnLifetimeJitter`, `MaxConnIdleTime`, `HealthCheckPeriod`, `PingTimeout`); unset keeps the pgx default
-- [x] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`, applied at startup
-- [ ] Seed data for demos: idempotent SQL in `migrations/seed/`, run by `make seed`
+- [x] [Goose](https://github.com/pressly/goose) migrations: formatted SQL files in `migrations/` at the repository root, embedded with `go:embed`
+- [x] `api/tooling/admin` CLI: `migrate`, `migrate status`, `migrate down`, `seed`, `useradd`; same `DB_*` configuration and same image as the API
+- [x] Stop migrating at API startup: the admin tool owns the schema
+- [ ] Separate database roles: a migrator role with DDL rights for the admin tool, a DML-only role for the API
+- [x] Seed data for demos: idempotent SQL in `migrations/seed/`, run by `make seed`
 - [x] Map unique violations (`23505`) to `ErrDuplicatedEntry`
 - [x] UUID v7 IDs with the standard library `uuid.NewV7()`; v4 or raw `crypto/rand` bytes for anything that must be unguessable
 - [ ] `database.WithTx` helper for multi-step writes
