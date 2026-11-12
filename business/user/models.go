@@ -4,6 +4,8 @@ import (
 	"net/mail"
 	"time"
 	"uuid"
+
+	"github.com/ousloob/bookstore/business/role"
 )
 
 // User is a user as the business layer sees one.
@@ -11,7 +13,7 @@ type User struct {
 	ID           uuid.UUID
 	Name         string
 	Email        mail.Address
-	Roles        []Role
+	Roles        []role.Role
 	PasswordHash []byte
 	DateCreated  time.Time
 	DateUpdated  time.Time
@@ -21,6 +23,6 @@ type User struct {
 type NewUser struct {
 	Name     string
 	Email    mail.Address
-	Roles    []Role
+	Roles    []role.Role
 	Password string
 }

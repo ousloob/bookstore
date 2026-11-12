@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ousloob/bookstore/business/role"
 	"github.com/ousloob/bookstore/business/user"
 	"github.com/ousloob/bookstore/business/user/userdb"
 	"golang.org/x/term"
@@ -79,8 +80,8 @@ func UserAdd(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []str
 	return nil
 }
 
-func parseRoles(s string) ([]user.Role, error) {
-	var parsed []user.Role
+func parseRoles(s string) ([]role.Role, error) {
+	var parsed []role.Role
 
 	for field := range strings.SplitSeq(s, ",") {
 		name := strings.TrimSpace(field)
@@ -88,13 +89,13 @@ func parseRoles(s string) ([]user.Role, error) {
 			continue
 		}
 
-		role, err := user.ParseRole(name)
+		r, err := role.Parse(name)
 		if err != nil {
 			return nil, err
 		}
 
-		if !slices.Contains(parsed, role) {
-			parsed = append(parsed, role)
+		if !slices.Contains(parsed, r) {
+			parsed = append(parsed, r)
 		}
 	}
 

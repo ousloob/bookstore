@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/ousloob/bookstore/business/sys/database"
 	"github.com/ousloob/bookstore/business/user"
+	"github.com/ousloob/bookstore/foundation/database"
 )
 
 // Bus manages the set of APIs for user database access.

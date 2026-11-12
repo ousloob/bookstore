@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ousloob/bookstore/api/sales/routing/checkz"
 	v1 "github.com/ousloob/bookstore/api/sales/routing/v1"
-	"github.com/ousloob/bookstore/support/web/mid"
+	"github.com/ousloob/bookstore/foundation/web/mid"
 )
 
 // Config carries the shared resources the routes are built with.

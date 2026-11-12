@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ousloob/bookstore/support/web/mid"
+	"github.com/ousloob/bookstore/foundation/web/mid"
 )
 
 func TestLogger(t *testing.T) {
