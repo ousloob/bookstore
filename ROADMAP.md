@@ -91,7 +91,7 @@ Working document: finished items are checked off. Milestones are in dependency o
 ## M7. Observability
 
 - [ ] `log/slog`: `tint` in development, JSON in production; request ID and trace ID on every line
-- [ ] OpenTelemetry: `otelhttp`, `otelpgx`, request metrics, OTLP export, set up in `support/telemetry`
+- [ ] OpenTelemetry: `otelhttp`, `otelpgx`, request metrics, OTLP export, set up in `foundation/telemetry`
 - [x] `/livez` and `/readyz` (pings the database)
 - [ ] Grafana, Prometheus, Tempo, Loki and Alloy deployed in the kind dev overlay (M8), one starter dashboard committed
 

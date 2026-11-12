@@ -15,7 +15,7 @@ import (
 	"github.com/caarlos0/env/v11"
 	"github.com/lmittmann/tint"
 	"github.com/ousloob/bookstore/api/tooling/admin/command"
-	"github.com/ousloob/bookstore/business/sys/database"
+	"github.com/ousloob/bookstore/foundation/database"
 )
 
 var build = "develop"

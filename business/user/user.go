@@ -9,7 +9,7 @@ import (
 	"time"
 	"uuid"
 
-	"github.com/ousloob/bookstore/business/sys/database"
+	"github.com/ousloob/bookstore/foundation/database"
 	"golang.org/x/crypto/bcrypt"
 )
 
