@@ -3,10 +3,7 @@
 // roles, the middleware that checks them and the token that carries them.
 package role
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
 // Role is one area of the system a user is allowed to work in. Roles are not
 // ranked and do not contain one another: each grants its own area and nothing
@@ -26,22 +23,13 @@ const (
 	Admin Role = "admin"
 )
 
-// All is every role, in no meaningful order.
-var All = []Role{Customer, Staff, Admin}
-
 // Parse turns a string into a Role, rejecting names the API does not know: a
 // user holding an unknown role would hold a role that nothing ever checks.
 func Parse(s string) (Role, error) {
-	for _, r := range All {
-		if string(r) == s {
-			return r, nil
-		}
+	switch r := Role(s); r {
+	case Customer, Staff, Admin:
+		return r, nil
+	default:
+		return "", fmt.Errorf("unknown role %q, want customer, staff or admin", s)
 	}
-
-	names := make([]string, len(All))
-	for i, r := range All {
-		names[i] = string(r)
-	}
-
-	return "", fmt.Errorf("unknown role %q, want one of %s", s, strings.Join(names, ", "))
 }
