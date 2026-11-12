@@ -1,3 +1,4 @@
+// Package mid provides HTTP middleware and the Chain function that composes it.
 package mid
 
 import (

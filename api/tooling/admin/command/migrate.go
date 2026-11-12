@@ -41,8 +41,6 @@ func migrateUp(ctx context.Context, log *slog.Logger, db *pgxpool.Pool) error {
 		return fmt.Errorf("migrate: %w", err)
 	}
 
-	log.InfoContext(ctx, "migrate", "status", "schema up to date")
-
 	return nil
 }
 
@@ -70,12 +68,9 @@ func migrateStatus(ctx context.Context, log *slog.Logger, db *pgxpool.Pool) erro
 }
 
 func migrateDown(ctx context.Context, log *slog.Logger, db *pgxpool.Pool) error {
-	source, err := migrations.Rollback(ctx, log, db)
-	if err != nil {
+	if err := migrations.Rollback(ctx, log, db); err != nil {
 		return fmt.Errorf("migrate down: %w", err)
 	}
-
-	log.InfoContext(ctx, "migrate", "status", "rolled back", "source", filepath.Base(source))
 
 	return nil
 }

@@ -24,9 +24,6 @@ var fsys embed.FS
 //go:embed seed/*.sql
 var seedFsys embed.FS
 
-// ErrNoRollback is returned by Rollback when nothing has been applied yet.
-var ErrNoRollback = errors.New("no migration to roll back")
-
 // Status reports one migration and whether it has been applied.
 type Status struct {
 	Version   int64
@@ -81,23 +78,22 @@ func Apply(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool) error {
 // Reversing a migration usually destroys data, so this exists for development.
 // What keeps it out of production is the database role: the migrator role has
 // the rights to run it, the application role does not.
-func Rollback(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool) (string, error) {
+func Rollback(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool) error {
 	provider, closeDB, err := newProvider(log, pool)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer closeDB()
 
-	result, err := provider.Down(ctx)
-	if err != nil {
+	if _, err := provider.Down(ctx); err != nil {
 		if errors.Is(err, goose.ErrNoNextVersion) {
-			return "", ErrNoRollback
+			return errors.New("no migration to roll back")
 		}
 
-		return "", fmt.Errorf("rolling back migration: %w", err)
+		return fmt.Errorf("rolling back migration: %w", err)
 	}
 
-	return result.Source.Path, nil
+	return nil
 }
 
 // Report lists every migration with the state the database is in.
