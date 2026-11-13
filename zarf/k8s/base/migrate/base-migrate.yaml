@@ -2,15 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: sales-migrate
-  annotations:
-    # Argo CD reads these the day it takes over the deploy: run this job in
-    # the PreSync phase, before anything else syncs, and abort the sync if it
-    # fails. Until then `make dev-migrate` does the same thing by hand.
-    argocd.argoproj.io/hook: PreSync
-    # A job's spec cannot be changed once it exists, so the old one has to go
-    # before a new one is created. Argo does that with this policy; the make
-    # target deletes the job for the same reason.
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   # The schema is not something to retry blindly: a migration that failed on
   # bad SQL fails the same way every time. Two attempts cover a connection
