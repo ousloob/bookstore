@@ -47,9 +47,14 @@ func newProvider(log *slog.Logger, pool *pgxpool.Pool) (*goose.Provider, func() 
 		return nil, nil, fmt.Errorf("creating migration locker: %w", err)
 	}
 
+	// Without WithVerbose, goose logs nothing at all, even through slog. With
+	// it, every run says which migrations it applied or that there were none,
+	// and every statement it executes, which makes the job log the record of
+	// what changed the schema.
 	provider, err := goose.NewProvider(goose.DialectPostgres, db, fsys,
 		goose.WithLocker(locker),
 		goose.WithSlog(log),
+		goose.WithVerbose(true),
 	)
 	if err != nil {
 		db.Close()
@@ -67,8 +72,21 @@ func Apply(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool) error {
 	}
 	defer closeDB()
 
-	if _, err := provider.Up(ctx); err != nil {
+	results, err := provider.Up(ctx)
+	if err != nil {
 		return fmt.Errorf("applying migrations: %w", err)
+	}
+
+	// Goose logs each migration it applies, but Up returns early and silently
+	// when nothing is pending. Say so, so a run that changed nothing is
+	// distinguishable from a run that never happened.
+	if len(results) == 0 {
+		version, err := provider.GetDBVersion(ctx)
+		if err != nil {
+			return fmt.Errorf("reading schema version: %w", err)
+		}
+
+		log.InfoContext(ctx, "no migrations to run", "current_version", version)
 	}
 
 	return nil
