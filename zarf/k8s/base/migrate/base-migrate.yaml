@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sales-migrate
+  annotations:
+    # Argo CD reads these the day it takes over the deploy: run this job in
+    # the PreSync phase, before anything else syncs, and abort the sync if it
+    # fails. Until then `make dev-migrate` does the same thing by hand.
+    argocd.argoproj.io/hook: PreSync
+    # A job's spec cannot be changed once it exists, so the old one has to go
+    # before a new one is created. Argo does that with this policy; the make
+    # target deletes the job for the same reason.
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  # The schema is not something to retry blindly: a migration that failed on
+  # bad SQL fails the same way every time. Two attempts cover a connection
+  # dropped mid-run, and anything beyond that wants a person.
+  backoffLimit: 2
+  # Keep a finished job around long enough to read its log, then let it go.
+  ttlSecondsAfterFinished: 3600
+  # Nothing here should ever run for ten minutes. If it does, something holds
+  # a lock the migration needs, and failing beats waiting forever.
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: sales-migrate
+    spec:
+      restartPolicy: Never
+      # Match the sales user created in Containerfile.sales.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # The database is usually already up, and on a fresh cluster it is not.
+      # Holding the pod here keeps that ordinary case out of the migration
+      # container, which is then free to fail loudly at the first error.
+      initContainers:
+        - name: wait-for-database
+          image: bookstore/sales-api
+          command: ["./admin", "wait", "-timeout", "120s"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - secretRef:
+                name: database-credentials
+          env:
+            - name: DB_HOST
+              value: database-service
+            - name: DB_NAME
+              value: bookdb
+      containers:
+        - name: migrate
+          image: bookstore/sales-api
+          command: ["./admin", "migrate"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # The same secret the API reads. It will stop being the same one
+          # when the migrator and the application get separate database
+          # roles: this job keeps the role that may run DDL.
+          envFrom:
+            - secretRef:
+                name: database-credentials
+          env:
+            - name: DB_HOST
+              value: database-service
+            - name: DB_NAME
+              value: bookdb
