@@ -107,6 +107,9 @@ func run(ctx context.Context, log *slog.Logger) error {
 	case "seed":
 		return command.Seed(ctx, log, db)
 
+	case "wait":
+		return command.Wait(ctx, log, db, args[1:])
+
 	case "useradd":
 		return command.UserAdd(ctx, log, db, args[1:])
 

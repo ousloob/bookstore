@@ -23,6 +23,7 @@ Commands:
   migrate status       List the migrations and which ones are applied
   migrate down         Roll back the most recently applied migration
   seed                 Load the demo data from migrations/seed
+  wait                 Block until the database answers, or give up
   useradd              Create a user; prompts for the password on the terminal
   version              Print the build reference
   help                 Print this text
