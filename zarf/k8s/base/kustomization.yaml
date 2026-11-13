@@ -3,5 +3,5 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - database/base-database.yaml
+  - database
   - sales/base-sales.yaml

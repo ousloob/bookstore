@@ -27,12 +27,16 @@ help: ## Show this help
 KIND_CLUSTER := bookstore-cluster
 SALES_IMAGE  := localhost/bookstore/sales-api:dev
 NAMESPACE    := bookstore-system
+MIGRATE_JOB  := sales-migrate
+# Long enough for a cold cluster: the job's init container alone allows 120s
+# for the database to finish initdb.
+MIGRATE_TIMEOUT := 300
 BUILD_REF    := $(shell git rev-parse --short HEAD)
 
 # kind's podman support is experimental and must be opted into.
 export KIND_EXPERIMENTAL_PROVIDER := podman
 
-.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-update dev-db-forward dev-status dev-logs dev-logs-db
+.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-migrate dev-migrate-wait dev-update dev-db-forward dev-status dev-logs dev-logs-db
 
 # Rootless podman needs kind to run in a cgroup with delegated controllers; a
 # plain shell session does not have one, so dev-up starts kind in its own
@@ -76,9 +80,49 @@ dev-secrets: ## Sync the database credentials from Infisical into the cluster
 		--from-literal=DB_PASSWORD="$$DB_PASSWORD" \
 		--dry-run=client -o yaml' | kubectl apply -f -
 
-dev-apply: dev-secrets ## Apply the k8s manifests and wait for the database
+# Apply in three steps rather than one, because the API must not start
+# against a schema that is not there yet. The database comes up, the
+# migration job runs to completion, and only then does the API get applied.
+# A failed migration stops this target, so the Deployment is never applied
+# and whatever is already running keeps serving.
+dev-apply: dev-secrets ## Apply the database, migrate the schema, then apply the API
+	kubectl apply -k zarf/k8s/dev/database
+	$(MAKE) dev-migrate
 	kubectl apply -k zarf/k8s/dev
-	kubectl rollout status statefulset/database -n $(NAMESPACE) --timeout=120s
+
+# A job's spec is immutable, so the previous one has to go before this one
+# can be created. The job's own init container waits for the database, so
+# there is nothing to wait for here first.
+dev-migrate: ## Run the schema migration job and wait for it to finish
+	kubectl delete job/$(MIGRATE_JOB) -n $(NAMESPACE) --ignore-not-found
+	kubectl apply -k zarf/k8s/dev/migrate
+	@$(MAKE) --no-print-directory dev-migrate-wait
+
+# `kubectl wait --for=condition=Complete` blocks for the whole timeout when
+# the job fails, which turns a broken migration into a long silence. Poll
+# both conditions instead and report whichever lands first. One `kubectl get`
+# per turn: it asks which condition is currently true, and the answer is
+# Complete, Failed, or nothing yet.
+dev-migrate-wait:
+	@deadline=$$(( $$(date +%s) + $(MIGRATE_TIMEOUT) )); \
+	while :; do \
+		case "$$(kubectl get job/$(MIGRATE_JOB) -n $(NAMESPACE) \
+			-o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null)" in \
+		*Complete*) \
+			echo "migration complete"; \
+			exit 0 ;; \
+		*Failed*) \
+			echo "migration failed:"; \
+			kubectl logs job/$(MIGRATE_JOB) -n $(NAMESPACE) --all-containers --tail=50; \
+			exit 1 ;; \
+		esac; \
+		if [ $$(date +%s) -ge $$deadline ]; then \
+			echo "migration did not finish within $(MIGRATE_TIMEOUT)s:"; \
+			kubectl logs job/$(MIGRATE_JOB) -n $(NAMESPACE) --all-containers --tail=50; \
+			exit 1; \
+		fi; \
+		sleep 2; \
+	done
 
 dev-update: dev-build dev-load dev-apply ## Rebuild the image and (re)deploy it
 	kubectl rollout restart deployment/sales -n $(NAMESPACE)
