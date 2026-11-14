@@ -101,6 +101,11 @@ never start against a schema that is not there yet:
 If the migration fails, step 2 stops the whole target and prints the job's log,
 so step 3 never runs and whatever is already deployed keeps serving.
 
+The cluster enforces the same order on its own: each API pod has an init
+container, `./admin wait -migrated`, that holds the pod until the schema has
+every migration its binary carries. It only reads the schema version, so it
+also holds when the Deployment is applied by hand or out of order.
+
 The migration always runs while the previous version of the API is still live,
 so every migration has to work with the code already running. Add a column in
 one release and drop the old one in a later release; never both at once.

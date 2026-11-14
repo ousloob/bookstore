@@ -29,6 +29,29 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+      # The deploy runs the migration job before applying this Deployment,
+      # but that ordering lives outside the cluster. This makes the guarantee
+      # hold inside it too: a pod never starts serving against a schema that
+      # lacks a migration its binary carries, whoever applied the manifest.
+      # It only reads the schema version; it never migrates. On an ordinary
+      # restart the schema is already there and it passes on the first try.
+      initContainers:
+        - name: wait-for-migration
+          image: bookstore/sales-api
+          command: ["./admin", "wait", "-migrated", "-timeout", "300s"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - secretRef:
+                name: database-credentials
+          env:
+            - name: DB_HOST
+              value: database-service
+            - name: DB_NAME
+              value: bookdb
       containers:
         - name: sales-api
           image: bookstore/sales-api

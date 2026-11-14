@@ -2,22 +2,28 @@ package command
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/ousloob/bookstore/migrations"
 )
 
-// attemptTimeout bounds a single ping, so a database that accepts the
+// attemptTimeout bounds a single check, so a database that accepts the
 // connection and then stalls does not eat the whole budget in one attempt.
 const attemptTimeout = 2 * time.Second
 
-// Wait blocks until the database answers, or gives up. It runs as the init
-// container of the migration job: migrate itself fails fast and loudly, so
-// something else has to absorb the ordinary case of a database that is still
-// starting up.
+// Wait blocks until the database is ready, or gives up. It is the init
+// container of both pods that need the database:
+//
+//   - the migration job waits for the database to answer, so migrate itself
+//     can fail fast and loudly at the first real error;
+//   - the API waits, with -migrated, until the schema has every migration
+//     this binary carries, so it never serves against a schema it does not
+//     know, whoever applied the Deployment and in whatever order.
 //
 // It pings through the pool, which takes a connection from it, so success
 // means the credentials work and the database exists. A port that merely
@@ -28,6 +34,7 @@ func Wait(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []string
 	fs := flag.NewFlagSet("wait", flag.ContinueOnError)
 	timeout := fs.Duration("timeout", time.Minute, "how long to keep trying before giving up")
 	interval := fs.Duration("interval", time.Second, "how long to wait between attempts")
+	migrated := fs.Bool("migrated", false, "also wait until no migration is pending")
 
 	if err := fs.Parse(args); err != nil {
 		return ErrHelp
@@ -37,26 +44,43 @@ func Wait(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []string
 	defer cancel()
 
 	for attempt := 1; ; attempt++ {
-		err := ping(ctx, db)
+		err := check(ctx, log, db, *migrated)
 		if err == nil {
-			log.InfoContext(ctx, "wait", "status", "database ready", "attempts", attempt)
+			log.InfoContext(ctx, "wait", "status", "ready", "attempts", attempt)
 			return nil
 		}
 
-		log.InfoContext(ctx, "wait", "status", "database not ready yet", "attempt", attempt, "err", err)
+		log.InfoContext(ctx, "wait", "status", "not ready yet", "attempt", attempt, "err", err)
 
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("wait: database not ready after %s: %w", *timeout, err)
+			return fmt.Errorf("wait: not ready after %s: %w", *timeout, err)
 
 		case <-time.After(*interval):
 		}
 	}
 }
 
-func ping(ctx context.Context, db *pgxpool.Pool) error {
+func check(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, migrated bool) error {
 	ctx, cancel := context.WithTimeout(ctx, attemptTimeout)
 	defer cancel()
 
-	return db.Ping(ctx)
+	if err := db.Ping(ctx); err != nil {
+		return err
+	}
+
+	if !migrated {
+		return nil
+	}
+
+	pending, err := migrations.Pending(ctx, log, db)
+	if err != nil {
+		return err
+	}
+
+	if pending {
+		return errors.New("migrations pending, the migration job has not run yet")
+	}
+
+	return nil
 }

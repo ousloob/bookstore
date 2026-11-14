@@ -92,6 +92,25 @@ func Apply(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool) error {
 	return nil
 }
 
+// Pending reports whether the database still lacks a migration this binary
+// carries. It takes no lock and changes nothing, so the API can ask it while
+// the migration job runs. A database that is ahead of the binary, as after a
+// code rollback, has nothing pending.
+func Pending(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool) (bool, error) {
+	provider, closeDB, err := newProvider(log, pool)
+	if err != nil {
+		return false, err
+	}
+	defer closeDB()
+
+	pending, err := provider.HasPending(ctx)
+	if err != nil {
+		return false, fmt.Errorf("checking for pending migrations: %w", err)
+	}
+
+	return pending, nil
+}
+
 // Rollback rolls back the most recently applied migration, and only that one.
 // Reversing a migration usually destroys data, so this exists for development.
 // What keeps it out of production is the database role: the migrator role has
