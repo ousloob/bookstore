@@ -92,9 +92,10 @@ themselves `staff`.
 never start against a schema that is not there yet:
 
 1. `kubectl apply -k zarf/k8s/dev/database` brings up PostgreSQL.
-2. `make dev-migrate` deletes the previous migration job, applies a new one and
-   waits for it. The job runs `./admin migrate` from the same image as the API,
-   behind an init container that waits for the database to answer.
+2. `make dev-migrate` deletes the previous migration job, applies a new one,
+   follows its log and asks whether it succeeded. The job runs `./admin
+   migrate` from the same image as the API, behind an init container that
+   waits for the database to answer.
 3. `kubectl apply -k zarf/k8s/dev` applies the API.
 
 If the migration fails, step 2 stops the whole target and prints the job's log,

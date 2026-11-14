@@ -28,15 +28,12 @@ KIND_CLUSTER := bookstore-cluster
 SALES_IMAGE  := localhost/bookstore/sales-api:dev
 NAMESPACE    := bookstore-system
 MIGRATE_JOB  := sales-migrate
-# Long enough for a cold cluster: the job's init container alone allows 120s
-# for the database to finish initdb.
-MIGRATE_TIMEOUT := 300
 BUILD_REF    := $(shell git rev-parse --short HEAD)
 
 # kind's podman support is experimental and must be opted into.
 export KIND_EXPERIMENTAL_PROVIDER := podman
 
-.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-migrate dev-migrate-wait dev-update dev-db-forward dev-status dev-logs dev-logs-db
+.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-migrate dev-update dev-db-forward dev-status dev-logs dev-logs-db
 
 # Rootless podman needs kind to run in a cgroup with delegated controllers; a
 # plain shell session does not have one, so dev-up starts kind in its own
@@ -91,38 +88,19 @@ dev-apply: dev-secrets ## Apply the database, migrate the schema, then apply the
 	kubectl apply -k zarf/k8s/dev
 
 # A job's spec is immutable, so the previous one has to go before this one
-# can be created. The job's own init container waits for the database, so
-# there is nothing to wait for here first.
+# can be created. Then follow the job's log until its pod ends, and ask
+# whether it ended well.
+#
+# --pod-running-timeout is what makes the follow safe: the pod does not exist
+# the instant the job is applied, and its init container waits for the
+# database before the migration container starts, so kubectl has to be
+# willing to hang around. The last line is the verdict, and it is the one
+# that fails this target.
 dev-migrate: ## Run the schema migration job and wait for it to finish
 	kubectl delete job/$(MIGRATE_JOB) -n $(NAMESPACE) --ignore-not-found
 	kubectl apply -k zarf/k8s/dev/migrate
-	@$(MAKE) --no-print-directory dev-migrate-wait
-
-# `kubectl wait --for=condition=Complete` blocks for the whole timeout when
-# the job fails, which turns a broken migration into a long silence. Poll
-# both conditions instead and report whichever lands first. One `kubectl get`
-# per turn: it asks which condition is currently true, and the answer is
-# Complete, Failed, or nothing yet.
-dev-migrate-wait:
-	@deadline=$$(( $$(date +%s) + $(MIGRATE_TIMEOUT) )); \
-	while :; do \
-		case "$$(kubectl get job/$(MIGRATE_JOB) -n $(NAMESPACE) \
-			-o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null)" in \
-		*Complete*) \
-			echo "migration complete"; \
-			exit 0 ;; \
-		*Failed*) \
-			echo "migration failed:"; \
-			kubectl logs job/$(MIGRATE_JOB) -n $(NAMESPACE) --all-containers --tail=50; \
-			exit 1 ;; \
-		esac; \
-		if [ $$(date +%s) -ge $$deadline ]; then \
-			echo "migration did not finish within $(MIGRATE_TIMEOUT)s:"; \
-			kubectl logs job/$(MIGRATE_JOB) -n $(NAMESPACE) --all-containers --tail=50; \
-			exit 1; \
-		fi; \
-		sleep 2; \
-	done
+	kubectl logs -f job/$(MIGRATE_JOB) -n $(NAMESPACE) --all-containers --pod-running-timeout=150s
+	kubectl wait --for=condition=Complete job/$(MIGRATE_JOB) -n $(NAMESPACE) --timeout=60s
 
 dev-update: dev-build dev-load dev-apply ## Rebuild the image and (re)deploy it
 	kubectl rollout restart deployment/sales -n $(NAMESPACE)

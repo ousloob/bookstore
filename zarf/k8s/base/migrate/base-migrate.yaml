@@ -3,10 +3,14 @@ kind: Job
 metadata:
   name: sales-migrate
 spec:
-  # The schema is not something to retry blindly: a migration that failed on
-  # bad SQL fails the same way every time. Two attempts cover a connection
-  # dropped mid-run, and anything beyond that wants a person.
-  backoffLimit: 2
+  # One attempt, one pod. A migration that failed on bad SQL fails the same
+  # way every time, and the transient case this might have covered, a
+  # database that is not up yet, is already handled by the init container.
+  #
+  # It also keeps the deploy honest: the log the deploy follows belongs to
+  # the only pod there will ever be, and the job reports Failed as soon as
+  # that pod does, instead of after a round of backoff.
+  backoffLimit: 0
   # Keep a finished job around long enough to read its log, then let it go.
   ttlSecondsAfterFinished: 3600
   # Nothing here should ever run for ten minutes. If it does, something holds
