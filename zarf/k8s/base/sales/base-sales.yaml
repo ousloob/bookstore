@@ -38,7 +38,7 @@ spec:
       initContainers:
         - name: wait-for-migration
           image: bookstore/sales-api
-          command: ["./admin", "wait", "-migrated", "-timeout", "300s"]
+          command: ["./admin", "wait", "migrations", "-timeout", "300s"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

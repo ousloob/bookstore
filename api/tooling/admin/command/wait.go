@@ -21,9 +21,10 @@ const attemptTimeout = 2 * time.Second
 //
 //   - the migration job waits for the database to answer, so migrate itself
 //     can fail fast and loudly at the first real error;
-//   - the API waits, with -migrated, until the schema has every migration
-//     this binary carries, so it never serves against a schema it does not
-//     know, whoever applied the Deployment and in whatever order.
+//   - the API runs `wait migrations`, which also waits until the schema has
+//     every migration this binary carries, so it never serves against a
+//     schema it does not know, whoever applied the Deployment and in
+//     whatever order.
 //
 // It pings through the pool, which takes a connection from it, so success
 // means the credentials work and the database exists. A port that merely
@@ -31,12 +32,25 @@ const attemptTimeout = 2 * time.Second
 // through initdb, and it answers on the port before the role and the database
 // are there.
 func Wait(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []string) error {
+	if len(args) == 0 {
+		return errors.New("wait needs a subcommand: database or migrations")
+	}
+
+	var migrated bool
+
+	switch args[0] {
+	case "database":
+	case "migrations":
+		migrated = true
+	default:
+		return fmt.Errorf("unknown wait subcommand %q, want database or migrations", args[0])
+	}
+
 	fs := flag.NewFlagSet("wait", flag.ContinueOnError)
 	timeout := fs.Duration("timeout", time.Minute, "how long to keep trying before giving up")
 	interval := fs.Duration("interval", time.Second, "how long to wait between attempts")
-	migrated := fs.Bool("migrated", false, "also wait until no migration is pending")
 
-	if err := fs.Parse(args); err != nil {
+	if err := fs.Parse(args[1:]); err != nil {
 		return ErrHelp
 	}
 
@@ -44,7 +58,7 @@ func Wait(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []string
 	defer cancel()
 
 	for attempt := 1; ; attempt++ {
-		err := check(ctx, log, db, *migrated)
+		err := check(ctx, log, db, migrated)
 		if err == nil {
 			log.InfoContext(ctx, "wait", "status", "ready", "attempts", attempt)
 			return nil

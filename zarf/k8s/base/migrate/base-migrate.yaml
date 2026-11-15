@@ -33,7 +33,7 @@ spec:
       initContainers:
         - name: wait-for-database
           image: bookstore/sales-api
-          command: ["./admin", "wait", "-timeout", "120s"]
+          command: ["./admin", "wait", "database", "-timeout", "120s"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -50,7 +50,7 @@ spec:
       containers:
         - name: migrate
           image: bookstore/sales-api
-          command: ["./admin", "migrate"]
+          command: ["./admin", "migrate", "up"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

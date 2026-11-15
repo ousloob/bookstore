@@ -94,7 +94,7 @@ never start against a schema that is not there yet:
 1. `kubectl apply -k zarf/k8s/dev/database` brings up PostgreSQL.
 2. `make dev-migrate` deletes the previous migration job, applies a new one,
    follows its log and asks whether it succeeded. The job runs `./admin
-   migrate` from the same image as the API, behind an init container that
+   migrate up` from the same image as the API, behind an init container that
    waits for the database to answer.
 3. `kubectl apply -k zarf/k8s/dev` applies the API.
 
@@ -102,7 +102,7 @@ If the migration fails, step 2 stops the whole target and prints the job's log,
 so step 3 never runs and whatever is already deployed keeps serving.
 
 The cluster enforces the same order on its own: each API pod has an init
-container, `./admin wait -migrated`, that holds the pod until the schema has
+container, `./admin wait migrations`, that holds the pod until the schema has
 every migration its binary carries. It only reads the schema version, so it
 also holds when the Deployment is applied by hand or out of order.
 

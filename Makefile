@@ -143,7 +143,7 @@ admin: ## Show the admin tool's commands
 	go run ./api/tooling/admin help
 
 migrate: ## Apply every pending migration
-	go run ./api/tooling/admin migrate
+	go run ./api/tooling/admin migrate up
 
 migrate-status: ## List the migrations and which ones are applied
 	go run ./api/tooling/admin migrate status
