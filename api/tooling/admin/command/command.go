@@ -19,10 +19,12 @@ func Usage(w io.Writer) {
 Usage: admin <command> [arguments]
 
 Commands:
-  migrate              Apply every pending migration
-  migrate status       List the migrations and which ones are applied
+  migrate up           Apply every pending migration
   migrate down         Roll back the most recently applied migration
+  migrate status       List the migrations and which ones are applied
   seed                 Load the demo data from migrations/seed
+  wait database        Block until the database answers
+  wait migrations      Block until the database answers and nothing is pending
   useradd              Create a user; prompts for the password on the terminal
   version              Print the build reference
   help                 Print this text

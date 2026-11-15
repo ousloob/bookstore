@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,15 +14,15 @@ import (
 	"github.com/ousloob/bookstore/migrations"
 )
 
-// Migrate dispatches the migrate subcommands. No subcommand means "up",
-// because that is the one a deployment runs.
+// Migrate dispatches the migrate subcommands, named after the goose
+// commands they run. The verb is required: "migrate" on its own used to
+// mean up, and a word that changes the schema should be typed out.
 func Migrate(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []string) error {
-	sub := "up"
-	if len(args) > 0 {
-		sub = args[0]
+	if len(args) == 0 {
+		return errors.New("migrate needs a subcommand: up, down or status")
 	}
 
-	switch sub {
+	switch args[0] {
 	case "up":
 		return migrateUp(ctx, log, db)
 
@@ -32,7 +33,7 @@ func Migrate(ctx context.Context, log *slog.Logger, db *pgxpool.Pool, args []str
 		return migrateDown(ctx, log, db)
 
 	default:
-		return fmt.Errorf("unknown migrate subcommand %q", sub)
+		return fmt.Errorf("unknown migrate subcommand %q, want up, down or status", args[0])
 	}
 }
 

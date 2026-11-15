@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The database is applied on its own first, before the migration job, and
+# again as part of the whole overlay afterwards. Having it behind its own
+# kustomization keeps that first step to one path.
+resources:
+  - base-database.yaml

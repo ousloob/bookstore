@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# The migration job is kept out of base/kustomization.yaml on purpose. It is
+# not part of the desired state of the cluster: it runs to completion first,
+# and only if it succeeds does the API get applied. Applying it in the same
+# pass as the Deployment would start the new pods before the schema is ready,
+# which is the whole thing this job exists to prevent.
+#
+# A job's spec cannot be changed once it exists, so the deploy deletes the
+# previous job before applying this one. See the dev-migrate make target.
+resources:
+  - base-migrate.yaml

@@ -86,6 +86,30 @@ Roles are not ranked: `customer` shops, `staff` runs the store, `admin` manages
 users and roles and nothing else. An admin who also runs the store gives
 themselves `staff`.
 
+### Deploying to the cluster
+
+`make dev-apply` applies the manifests in three steps, because the API must
+never start against a schema that is not there yet:
+
+1. `kubectl apply -k zarf/k8s/dev/database` brings up PostgreSQL.
+2. `make dev-migrate` deletes the previous migration job, applies a new one,
+   follows its log and asks whether it succeeded. The job runs `./admin
+   migrate up` from the same image as the API, behind an init container that
+   waits for the database to answer.
+3. `kubectl apply -k zarf/k8s/dev` applies the API.
+
+If the migration fails, step 2 stops the whole target and prints the job's log,
+so step 3 never runs and whatever is already deployed keeps serving.
+
+The cluster enforces the same order on its own: each API pod has an init
+container, `./admin wait migrations`, that holds the pod until the schema has
+every migration its binary carries. It only reads the schema version, so it
+also holds when the Deployment is applied by hand or out of order.
+
+The migration always runs while the previous version of the API is still live,
+so every migration has to work with the code already running. Add a column in
+one release and drop the old one in a later release; never both at once.
+
 ## Development
 
 ```sh

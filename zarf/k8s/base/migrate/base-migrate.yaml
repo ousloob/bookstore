@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sales-migrate
+spec:
+  # One attempt, one pod. A migration that failed on bad SQL fails the same
+  # way every time, and the transient case this might have covered, a
+  # database that is not up yet, is already handled by the init container.
+  #
+  # It also keeps the deploy honest: the log the deploy follows belongs to
+  # the only pod there will ever be, and the job reports Failed as soon as
+  # that pod does, instead of after a round of backoff.
+  backoffLimit: 0
+  # Keep a finished job around long enough to read its log, then let it go.
+  ttlSecondsAfterFinished: 3600
+  # Nothing here should ever run for ten minutes. If it does, something holds
+  # a lock the migration needs, and failing beats waiting forever.
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: sales-migrate
+    spec:
+      restartPolicy: Never
+      # Match the sales user created in Containerfile.sales.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # The database is usually already up, and on a fresh cluster it is not.
+      # Holding the pod here keeps that ordinary case out of the migration
+      # container, which is then free to fail loudly at the first error.
+      initContainers:
+        - name: wait-for-database
+          image: bookstore/sales-api
+          command: ["./admin", "wait", "database", "-timeout", "120s"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - secretRef:
+                name: database-credentials
+          env:
+            - name: DB_HOST
+              value: database-service
+            - name: DB_NAME
+              value: bookdb
+      containers:
+        - name: migrate
+          image: bookstore/sales-api
+          command: ["./admin", "migrate", "up"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # The same secret the API reads. It will stop being the same one
+          # when the migrator and the application get separate database
+          # roles: this job keeps the role that may run DDL.
+          envFrom:
+            - secretRef:
+                name: database-credentials
+          env:
+            - name: DB_HOST
+              value: database-service
+            - name: DB_NAME
+              value: bookdb

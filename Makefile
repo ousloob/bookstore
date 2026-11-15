@@ -27,12 +27,13 @@ help: ## Show this help
 KIND_CLUSTER := bookstore-cluster
 SALES_IMAGE  := localhost/bookstore/sales-api:dev
 NAMESPACE    := bookstore-system
+MIGRATE_JOB  := sales-migrate
 BUILD_REF    := $(shell git rev-parse --short HEAD)
 
 # kind's podman support is experimental and must be opted into.
 export KIND_EXPERIMENTAL_PROVIDER := podman
 
-.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-update dev-db-forward dev-status dev-logs dev-logs-db
+.PHONY: dev-up dev-down dev-build dev-load dev-secrets dev-apply dev-migrate dev-update dev-db-forward dev-status dev-logs dev-logs-db
 
 # Rootless podman needs kind to run in a cgroup with delegated controllers; a
 # plain shell session does not have one, so dev-up starts kind in its own
@@ -76,9 +77,30 @@ dev-secrets: ## Sync the database credentials from Infisical into the cluster
 		--from-literal=DB_PASSWORD="$$DB_PASSWORD" \
 		--dry-run=client -o yaml' | kubectl apply -f -
 
-dev-apply: dev-secrets ## Apply the k8s manifests and wait for the database
+# Apply in three steps rather than one, because the API must not start
+# against a schema that is not there yet. The database comes up, the
+# migration job runs to completion, and only then does the API get applied.
+# A failed migration stops this target, so the Deployment is never applied
+# and whatever is already running keeps serving.
+dev-apply: dev-secrets ## Apply the database, migrate the schema, then apply the API
+	kubectl apply -k zarf/k8s/dev/database
+	$(MAKE) dev-migrate
 	kubectl apply -k zarf/k8s/dev
-	kubectl rollout status statefulset/database -n $(NAMESPACE) --timeout=120s
+
+# A job's spec is immutable, so the previous one has to go before this one
+# can be created. Then follow the job's log until its pod ends, and ask
+# whether it ended well.
+#
+# --pod-running-timeout is what makes the follow safe: the pod does not exist
+# the instant the job is applied, and its init container waits for the
+# database before the migration container starts, so kubectl has to be
+# willing to hang around. The last line is the verdict, and it is the one
+# that fails this target.
+dev-migrate: ## Run the schema migration job and wait for it to finish
+	kubectl delete job/$(MIGRATE_JOB) -n $(NAMESPACE) --ignore-not-found
+	kubectl apply -k zarf/k8s/dev/migrate
+	kubectl logs -f job/$(MIGRATE_JOB) -n $(NAMESPACE) --all-containers --pod-running-timeout=150s
+	kubectl wait --for=condition=Complete job/$(MIGRATE_JOB) -n $(NAMESPACE) --timeout=60s
 
 dev-update: dev-build dev-load dev-apply ## Rebuild the image and (re)deploy it
 	kubectl rollout restart deployment/sales -n $(NAMESPACE)
@@ -121,7 +143,7 @@ admin: ## Show the admin tool's commands
 	go run ./api/tooling/admin help
 
 migrate: ## Apply every pending migration
-	go run ./api/tooling/admin migrate
+	go run ./api/tooling/admin migrate up
 
 migrate-status: ## List the migrations and which ones are applied
 	go run ./api/tooling/admin migrate status
