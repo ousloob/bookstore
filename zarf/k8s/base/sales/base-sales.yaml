@@ -83,3 +83,10 @@ spec:
               path: /readyz
               port: sales-api
             periodSeconds: 5
+            # The handler gives the database ping 2s. kubelet's default here
+            # is 1s, so a ping that took between 1s and 2s counted as a
+            # failure while the handler was still waiting for an answer it
+            # would have accepted. Give kubelet more patience than the
+            # handler, not less, or a slow database drops every pod out of
+            # the Service at once.
+            timeoutSeconds: 3
