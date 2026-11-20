@@ -65,11 +65,15 @@ Working document: finished items are checked off. Milestones are in dependency o
 
 ## M4. Favorites, reservations and orders
 
+- [ ] Addresses (table created in migration `00002`): several per user, free-text label, one default per user, optional phone in E.164 for the carrier; none needed to collect in the shop
 - [ ] Favorites: add, remove, list
 - [ ] Reservations: hold a copy for a number of days, auto-release on expiry
 - [ ] Orders with status: created, ready, collected, cancelled
 - [ ] Order creation in one transaction: conditional stock decrement (`stock >= qty`, zero rows means out of stock), then order and lines; `CHECK (stock >= 0)`
 - [ ] Idempotency keys: `Idempotency-Key` header stored with the user, a body hash and the response, in the same transaction; replay returns the stored response, different body 422, in flight 409, expiry 24 h
+- [ ] Shipping: the order copies the delivery address and phone as they were at checkout, so editing an address never rewrites a past order; statuses `shipped` and `delivered`
+- [ ] Account status: `banned` by an admin, `archived` after two years without activity (the CNIL counts from the last action, so `date_last_active` moves on login and on refresh); warn by email before archiving, and let signing in restore the account
+- [ ] Retention job: an `admin archive-inactive` subcommand, run by a Kubernetes `CronJob` from the same image as the API, in the same shape as the migration Job; one batched `UPDATE ... RETURNING` so a second run changes nothing, never a ticker inside the API, which would run once per replica and stop when the API is down
 - [ ] Tests: concurrent orders for the last copy; same request twice with one key
 
 ## M5. Payments

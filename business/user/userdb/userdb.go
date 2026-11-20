@@ -41,8 +41,11 @@ func (b *Bus) Create(ctx context.Context, usr user.User) error {
         email,
         password_hash,
         roles,
+        status,
         date_created,
-        date_updated
+        date_updated,
+        date_status_changed,
+        date_last_active
     )
 	VALUES (
         @user_id,
@@ -50,20 +53,26 @@ func (b *Bus) Create(ctx context.Context, usr user.User) error {
         @email,
         @password_hash,
         @roles,
+        @status,
         @date_created,
-        @date_updated
+        @date_updated,
+        @date_status_changed,
+        @date_last_active
     )`
 
 	dbUsr := toDBUser(usr)
 
 	args := pgx.NamedArgs{
-		"user_id":       dbUsr.ID,
-		"name":          dbUsr.Name,
-		"email":         dbUsr.Email,
-		"password_hash": dbUsr.PasswordHash,
-		"roles":         dbUsr.Roles,
-		"date_created":  dbUsr.DateCreated,
-		"date_updated":  dbUsr.DateUpdated,
+		"user_id":             dbUsr.ID,
+		"name":                dbUsr.Name,
+		"email":               dbUsr.Email,
+		"password_hash":       dbUsr.PasswordHash,
+		"roles":               dbUsr.Roles,
+		"status":              dbUsr.Status,
+		"date_created":        dbUsr.DateCreated,
+		"date_updated":        dbUsr.DateUpdated,
+		"date_status_changed": dbUsr.DateStatusChanged,
+		"date_last_active":    dbUsr.DateLastActive,
 	}
 
 	if _, err := b.db.Exec(ctx, q, args); err != nil {
