@@ -9,8 +9,10 @@ INSERT INTO users (
     email,
     roles,
     password_hash,
+    status,
     date_created,
-    date_updated
+    date_updated,
+    date_status_changed
 )
 VALUES
     (
@@ -18,7 +20,9 @@ VALUES
         'Staff Gopher',
         'staff@bookstore.test',
         ARRAY['staff'],
-        '$2a$10$a/C5joZFTCfFid5PM4Wy/eYni7tscsIpLacGcMbY7PPmdZ/WBzEMe'::bytea,
+        '$2a$10$a/C5joZFTCfFid5PM4Wy/eYni7tscsIpLacGcMbY7PPmdZ/WBzEMe',
+        'active',
+        '2026-01-01 00:00:00+00',
         '2026-01-01 00:00:00+00',
         '2026-01-01 00:00:00+00'
     ),
@@ -27,7 +31,9 @@ VALUES
         'Customer Gopher',
         'customer@bookstore.test',
         ARRAY['customer'],
-        '$2a$10$a/C5joZFTCfFid5PM4Wy/eYni7tscsIpLacGcMbY7PPmdZ/WBzEMe'::bytea,
+        '$2a$10$a/C5joZFTCfFid5PM4Wy/eYni7tscsIpLacGcMbY7PPmdZ/WBzEMe',
+        'active',
+        '2026-01-01 00:00:00+00',
         '2026-01-01 00:00:00+00',
         '2026-01-01 00:00:00+00'
     )

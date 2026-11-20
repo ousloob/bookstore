@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 	"uuid"
 
@@ -42,14 +43,22 @@ func (b *Bus) Create(ctx context.Context, nu NewUser, now time.Time) (User, erro
 		return User{}, fmt.Errorf("generating password hash: %w", err)
 	}
 
+	// Providers treat the local part as case-insensitive, so one spelling
+	// keeps Bob@x.com and bob@x.com from becoming two accounts.
+	email := nu.Email
+	email.Address = strings.ToLower(email.Address)
+
 	usr := User{
 		ID:           uuid.NewV7(),
 		Name:         nu.Name,
-		Email:        nu.Email,
+		Email:        email,
 		Roles:        nu.Roles,
 		PasswordHash: hash,
-		DateCreated:  now,
-		DateUpdated:  now,
+		Status:       Active,
+
+		DateCreated:       now,
+		DateUpdated:       now,
+		DateStatusChanged: now,
 	}
 
 	if err := b.store.Create(ctx, usr); err != nil {
